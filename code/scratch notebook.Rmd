@@ -1,0 +1,168 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+I started to find out what variables I need, an then I realized that the panel version of my research might be problematic
+and I want to check that how could it be , so I'm looking at the info of panel 20 in year 15 and year 16
+
+```{r}
+
+yr15p20 <- fyc15 %>% 
+  filter(PANEL == 20)
+
+
+yr16p20 <- fyc16 %>% 
+  filter(PANEL == 20)
+
+subyr15p20 <- yr15p20[yr15p20$DUPERSID %in% yr16p20$DUPERSID, ]
+
+
+```
+
+I want to check how many unique ID i have in each dataset
+
+```{r}
+
+length(unique(yr15p20$DUPERSID))
+
+length(unique(yr16p20$DUPERSID))
+length(unique(subyr15p20$DUPERSID))
+
+
+```
+there might be some IDs in yr16p20 that are not present in yr15p20 I want to see what is happening
+
+```{r}
+missing_ids <- yr16p20[!yr16p20$DUPERSID %in% yr15p20$DUPERSID, ]
+nrow(missing_ids)
+
+```
+now i need to delet this people from the sample 2016 so that I would have the exact same people in my panel
+```{r}
+subyr16p20 <- yr16p20[!yr16p20$DUPERSID %in% missing_ids$DUPERSID, ]
+
+
+```
+
+
+so this shows me that about 1200 person dropped out of the study in the next year
+Now, I want to see if the report of screening is the same for individuals
+
+```{r}
+table(subyr15p20$CLNTST53)
+table(subyr16p20$CLNTST53)
+
+
+```
+
+Now the  result is not close to what I expected U want to see if the people who said that I did colonscopy 
+
+I'm going to see if the people how report that last time they colonscopy was 5 years ago the same as people who report as Never
+
+```{r}
+
+
+subyr15p20 <- subyr15p20 %>% 
+  filter(CLNTST53 == 5)
+
+subyr16p20 <- subyr16p20 %>% 
+  filter(CLNTST53 == 5)
+
+```
+
+now check the difference between one person in one year and second year
+
+```{r}
+
+
+data1 <- yr15p20 %>% 
+  filter(DUPERSID == 70389102)
+
+data2 <- yr16p20 %>% 
+  filter(DUPERSID == 70389102)
+
+```
+
+```{r}
+
+table(data1$AGE31X)
+table(data2$AGE31X)
+
+table(data2$AGE53X)
+table(data2$CLNTST53)
+table(data1$CLNTST53)
+
+```
+In general what I figured out is that for cancer screening I can bring info from round 5 
+
+## Cleaning Data
+
+if I decided to the loop this code can help me
+```{r}
+### doing this in one for loop instead
+
+# Create an empty list to store the results
+fyc_list <- list()
+# Loop through the years and read_MEPS for each year
+for (year in 2011:2019) {
+    # Read the data for the specific year
+    fyc_data <- read_MEPS(year = year, type = "FYC")
+    
+    # Add a "year" variable to the dataset
+    fyc_data$year <- year
+    
+    # Store the dataset in the list
+    fyc_list[[paste0("fyc", year)]] <- fyc_data
+}
+
+# Combine all datasets into one big dataset
+
+fyc <- do.call(rbind, fyc_list)
+```
+
+
+```{r}
+d2019 <- read_MEPS(file = "h216")
+p2019 <- read_MEPS(file = "h217")
+d2019p <- read_MEPS(file = "h209")
+pnl20<-read_MEPS(file = "h193")
+```
+
+Data : April 22 11:04
+
+Today I'm trying to prepare my data for the power analysis. I determined there are many variables that I need to determine later on about their inclusion  based on my models I'll includ them here for the later use.
+```{r}
+DDNWRK19, ADDAYA42, ADGENH42 , RTHLTH31, RTHLTH42,RTHLTH53, MNHLTH31, MNHLTH42,MNHLTH53, # Health
+                             ADRTCR42,
+                             ADSMOK42,  # risk
+                             DLAYCA42, AFRDCA42, DLAYPM42,AFRDPM42, OBDEXP19,  # cost
+                             HAVEUS42,TMTKUS42, PHNREG42, AFTHOU42, OBTOTV19, OBVTCH19, PRVSPK42, PROVTY42_M18 , YNOUSC42_M18,
+                             ADILWW42, ADILCR42, ADRTWW42, # Aceess
+                             OBDRV19, OBDTCH19 ,# healtj use
+                             ADHECR42, ADLIST42, ADEZUN42, ADEZUN42, ADRESP42, ADPRTM42, # Perceived quality of health services 
+                             ADINSA42 , ADINSB42 ,ADRISK42,ADOVER42, # distrust & risk
+                                      #health behaviors
+                             CHOLDX,  # Comorbidity
+                             
+                             REFRL19X, # for undoc
+```
+
+For cancer screening previously MEPS was gathering info for indiviual in round 3 and 5 basivly annually, but later after 2016 for each indiviual they asked it only once which make sense since some wouldn't change if they aren't current.I'll  be using their answer from last year for this analysis.
+
+
+# loading dataset:
+```{r}
+# FYC = Full year consolidated file (record = MEPS sample person)
+fyc11 <- read_MEPS(year = 2011, type = "FYC") # Make this code a loop
+fyc12 <- read_MEPS(year = 2012, type = "FYC")
+fyc13 <- read_MEPS(year = 2013, type = "FYC")
+fyc14 <- read_MEPS(year = 2014, type = "FYC")
+fyc15 <- read_MEPS(year = 2015, type = "FYC")
+fyc16 <- read_MEPS(year = 2016, type = "FYC")
+fyc17 <- read_MEPS(year = 2017, type = "FYC")
+fyc18 <- read_MEPS(year = 2018, type = "FYC")
+fyc19 <- read_MEPS(year = 2019, type = "FYC")
+
+```
+

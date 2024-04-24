@@ -96,8 +96,9 @@ table(data1$CLNTST53)
 ```
 In general what I figured out is that for cancer screening I can bring info from round 5 
 
-## Cleaning Data
+## 1. Cleaning Data
 
+### Load data
 if I decided to the loop this code can help me
 ```{r}
 ### doing this in one for loop instead
@@ -129,9 +130,30 @@ d2019p <- read_MEPS(file = "h209")
 pnl20<-read_MEPS(file = "h193")
 ```
 
-Data : April 22 11:04
+another way of loading data set
+
+```{r}
+# FYC = Full year consolidated file (record = MEPS sample person)
+fyc11 <- read_MEPS(year = 2011, type = "FYC") # Make this code a loop
+fyc12 <- read_MEPS(year = 2012, type = "FYC")
+fyc13 <- read_MEPS(year = 2013, type = "FYC")
+fyc14 <- read_MEPS(year = 2014, type = "FYC")
+fyc15 <- read_MEPS(year = 2015, type = "FYC")
+fyc16 <- read_MEPS(year = 2016, type = "FYC")
+fyc17 <- read_MEPS(year = 2017, type = "FYC")
+fyc18 <- read_MEPS(year = 2018, type = "FYC")
+fyc19 <- read_MEPS(year = 2019, type = "FYC")
+
+```
+
+
+
+
+### Choosing variables to subset  : 
+April 22 11:04
 
 Today I'm trying to prepare my data for the power analysis. I determined there are many variables that I need to determine later on about their inclusion  based on my models I'll includ them here for the later use.
+
 ```{r}
 DDNWRK19, ADDAYA42, ADGENH42 , RTHLTH31, RTHLTH42,RTHLTH53, MNHLTH31, MNHLTH42,MNHLTH53, # Health
                              ADRTCR42,
@@ -150,19 +172,69 @@ DDNWRK19, ADDAYA42, ADGENH42 , RTHLTH31, RTHLTH42,RTHLTH53, MNHLTH31, MNHLTH42,M
 
 For cancer screening previously MEPS was gathering info for indiviual in round 3 and 5 basivly annually, but later after 2016 for each indiviual they asked it only once which make sense since some wouldn't change if they aren't current.I'll  be using their answer from last year for this analysis.
 
+### Create a consistent variable for screening for all years
 
-# loading dataset:
 ```{r}
-# FYC = Full year consolidated file (record = MEPS sample person)
-fyc11 <- read_MEPS(year = 2011, type = "FYC") # Make this code a loop
-fyc12 <- read_MEPS(year = 2012, type = "FYC")
-fyc13 <- read_MEPS(year = 2013, type = "FYC")
-fyc14 <- read_MEPS(year = 2014, type = "FYC")
-fyc15 <- read_MEPS(year = 2015, type = "FYC")
-fyc16 <- read_MEPS(year = 2016, type = "FYC")
-fyc17 <- read_MEPS(year = 2017, type = "FYC")
-fyc18 <- read_MEPS(year = 2018, type = "FYC")
-fyc19 <- read_MEPS(year = 2019, type = "FYC")
+
+ADBRST42,ADMMGR42, # Breast Cancer
+CABREAST
+table(fyc18$ADBRST42)
+table(fyc18$CANCERDX)
+table(fyc18$AGE)
+
+table(fyc18$PANEL)
 
 ```
+
+let me first create a same variable for screening for years 2011 through 2016 then will move forward with creating similar variables for years with no information. Probably prior to do that I might need to fix the race variable for 2011 check if education need to be fixed or  US born requires any fixation.
+starting 2013 the US born question changed place and therefore variable name changed in 2013 we have both USborn and BornUS  for each variable that needed to be fixed take a look and fix:
+
+```{r}
+table(fyc13$USBORN42)
+table(fyc13$BORNUSA)
+
+table(fyc13$PANEL, fyc13$USBORN42)
+table(fyc13$PANEL, fyc13$BORNUSA)
+
+
+fyc13$BORNUSA<-ifelse(fyc13$PANEL==18,fyc13$BORNUSA,fyc13$USBORN42)
+fyc13$YRSINUS<-ifelse(fyc13$PANEL==18,fyc13$YRSINUS,fyc13$LIVEUS42)
+
+table(fyc13$PANEL, fyc13$YRSINUS)
+table(fyc13$PANEL, fyc13$LIVEUS42)
+
+```
+Another change in variable was the years lived in US, before 2013 this variable was a continuous variable named USLIVE42 however after 2013 it become a categorical variable YRSINUS. To be consistent I need to create a  categorical YRSINUS for years 2011 and 2012 and drop the USLIVE42 from these year data set here is the change:
+
+Fixing the years in US
+
+```{r}
+
+table(fyc13$PANEL, fyc13$YRSINUS)
+table(fyc14$PANEL, fyc14$YRSINUS)
+table(fyc12$PANEL, fyc12$USLIVE42)
+
+table(fyc12$USLIVE42)
+
+fyc12$YRSINUS<-fyc12$USLIVE42
+
+fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 1:4,2)  # 0: Single
+fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 5:9,3)  # 0: Single
+fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 10:14,4)  # 0: Single
+fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS >=15,5)  # 0: Single
+fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS==0,1)  # 0: Single
+
+table(fyc11$YRSINUS)
+table(fyc11$USLIVE42)
+fyc11$YRSINUS<-fyc11$USLIVE42
+fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 1:4,2)  # 0: Single
+fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 5:9,3)  # 0: Single
+fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 10:14,4)  # 0: Single
+fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS >=15,5)
+fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS==0,1)  # 0: Single
+
+
+
+```
+
 

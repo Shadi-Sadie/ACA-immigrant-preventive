@@ -76,7 +76,7 @@ fyc18  <- fyc2018 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
     ADUTRM42, ADPAP42,ADPAPG42, #Cervical Cancer
     ADCOLN42, ADCLNS42, ADSGMD42, ADBLDS42, # Colorectal Cancer
-    ADBRST42,ADMMGR42 # Breast Cancer
+    ADBRST42,ADMMGR42, # Breast Cancer
     ADPROS42, PSA53 # Prostate Cancer
 )
 
@@ -133,7 +133,7 @@ fyc14  <- fyc2014 %>% select(
 fyc13  <- fyc2013 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,MARRYX, FAMS1231, EDUYRDG,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION, EDRECODE, # Demographic
-    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    BORNUSA,USBORN42, LIVEUS42,YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
     HYSTER53, PAPSMR53, #Cervical Cancer
@@ -142,7 +142,13 @@ fyc13  <- fyc2013 %>% select(
     PSA53 # Prostate Cancer:
 )
 
+        # both US born variable mixed in one variable
+        fyc13$BORNUSA<-ifelse(fyc13$PANEL==18,fyc13$BORNUSA,fyc13$USBORN42)
+            # USBORN42 is extra and need to be dropped
+
+
 ## Name change in US born and years lived in US, I dodn't rename it yet because there might be differences
+## 
 fyc12  <- fyc2012 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,MARRYX, FAMS1231, EDUCYR,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
@@ -154,6 +160,20 @@ fyc12  <- fyc2012 %>% select(
     MAMOGR53, # Breast Cancer
     PSA53 # Prostate Cancer:
 )
+
+
+    fyc12 %>%
+            rename(
+                BORNUSA  = USBORN42,) 
+
+
+## there should be a change in YLINU afterward USLIVE42 can be dropped
+        fyc12$YRSINUS<-fyc12$USLIVE42
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 1:4,2)  # 2 1 YR., LESS THAN 5 YRS.
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 5:9,3)  # 3 5 YRS., LESS THAN 10 YRS.
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 10:14,4)  # 4 10 YRS., LESS THAN 15 YRS.
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS >=15,5)  # 5 15 YEARS OR MORE
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS==0,1)  # 1 LESS THAN 1 YEAR
 
 # In addition to the US-Born and everything there is a difference with RACE variable as well 
 fyc11  <- fyc2011 %>% select(
@@ -167,5 +187,14 @@ fyc11  <- fyc2011 %>% select(
     MAMOGR53, # Breast Cancer
     PSA53 # Prostate Cancer:
 )
-
+            fyc11 %>%
+                rename(
+                    BORNUSA  = USBORN42,
+                    YRSINUS= USLIVE42) 
+            
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 1:4,2)  # 2 1 YR., LESS THAN 5 YRS.
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 5:9,3)  # 3 5 YRS., LESS THAN 10 YRS.
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 10:14,4)  # 4 10 YRS., LESS THAN 15 YRS.
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS >=15,5) # 5 15 YEARS OR MORE
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS==0,1)  #  1 LESS THAN 1 YEAR
 

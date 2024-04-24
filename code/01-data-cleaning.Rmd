@@ -1,0 +1,561 @@
+---
+title: "01-data-cleaning"
+output: html_notebook
+---
+## About this code 
+
+This is first attempt for data cleaning for paper 2
+
+
+
+
+## Loading required libraries
+
+```{r}
+
+library(MEPS)     
+library(survey)
+library(tidyverse)
+library(haven)
+library(labelled)
+library(broom)
+```
+
+# Set survey option for lonely PSUs
+```{r}
+options(survey.lonely.psu="adjust")
+
+```
+
+## Loading Dataset
+
+Load datasets and Rename year-specific variables prior to combining  
+```{r}
+for (year in 2011:2019) {
+    
+    assign(paste0("fyc", year),
+    read_MEPS(year = year, type = "FYC"))  ## loading dataset
+    
+    
+    dataset_name <- paste0("fyc", year)
+    new_dataset_name <- paste0("fyc", year)
+    
+    assign(new_dataset_name,
+           get(dataset_name) %>%
+               rename(
+                   PERWT  = paste0("PERWT", substr(year, 3, 4), "F"), # substr(), the function extracts a substring from the year, starting from the third 
+                                                                        #character position and ending at the fourth character position
+                                                                           
+                   AGE = paste0("AGE", substr(year, 3, 4), "X"),
+                   MARRYX = paste0("MARRY", substr(year, 3, 4), "X"),
+                   POVCAT = paste0("POVCAT", substr(year, 3, 4)),
+                   POVLEV = paste0("POVLEV", substr(year, 3, 4) ),
+                   REGION = paste0("REGION", substr(year, 3, 4)),
+                   INSURC = paste0("INSURC", substr(year, 3, 4)), #Insurance
+                   MCDEV = paste0("MCDEV", substr(year, 3, 4)), 
+                   MCREV = paste0("MCREV", substr(year, 3, 4)), 
+                   PRVEV = paste0("PRVEV", substr(year, 3, 4)) , 
+                   UNINS = paste0("UNINS", substr(year, 3, 4)) ,
+                   INSCOV = paste0("INSCOV", substr(year, 3, 4)) ,
+                   PRIV = paste0("PRIV", substr(year, 3, 4))  
+               ))
+}
+
+
+
+```
+
+years 2011 to 2019 are my timeline span, however I need year 2020 in order to create screening variable for one of the panel in 2019.
+
+```{r}
+
+fyc2020<-read_MEPS(year = 2020, type = "FYC")
+
+```
+
+
+Now, I move to subset variable I need, for each year and clean them before I can append them toghether. I might be able to shorten this code later on in the process. 
+
+#2019
+
+```{r}
+
+fyc19 <- fyc2019 %>% select(
+                DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+                AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
+                BORNUSA, YRSINUS, OTHLGSPK,  HWELLSPK, WHTLGSPK, ADLANG42, # Immigration
+                INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+                CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER # cancer diagnoses
+     )
+
+
+```
+fixing education:
+
+```{r}
+# 1: No Dgree
+
+fyc19$HIDEG<-replace(fyc19$HIDEG, fyc19$HIDEG %in% c(2,3,7),2)# 2: GED or High school  2,3
+fyc19$HIDEG<-replace(fyc19$HIDEG, fyc19$HIDEG == 4,3) # 3: Bachelors
+fyc19$HIDEG<-replace(fyc19$HIDEG, fyc19$HIDEG %in% c(5,6),4) # 4: Master's and doctorate
+
+fyc19<-rename(fyc19, EDUC=HIDEG)
+
+
+
+
+```
+
+ 
+#2018
+
+```{r}
+
+fyc18  <- fyc2018 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY , REGION,HIDEG, # Demographic
+    BORNUSA, YRSINUS, OTHLGSPK,  HWELLSPK, WHTLGSPK, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    ADUTRM42, ADPAP42,ADPAPG42, #Cervical Cancer
+    ADCOLN42, ADCLNS42, ADSGMD42, ADBLDS42, # Colorectal Cancer
+    ADBRST42,ADMMGR42, # Breast Cancer
+    ADPROS42, PSA53 # Prostate Cancer
+)
+
+```
+
+cleaning education:
+```{r}
+# 1: No Dgree
+
+fyc18$HIDEG<-replace(fyc18$HIDEG, fyc18$HIDEG %in% c(2,3,7),2)# 2: GED or High school  2,3
+fyc18$HIDEG<-replace(fyc18$HIDEG, fyc18$HIDEG ==4,3) # 3: Bachelors
+fyc18$HIDEG<-replace(fyc18$HIDEG, fyc18$HIDEG %in% c(5,6),4) # 4: Master's and doctorate
+
+
+fyc18<-rename(fyc18, EDUC=HIDEG)
+
+
+```
+
+
+#2017
+
+```{r}
+fyc17  <- fyc2017 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
+    BORNUSA, YRSINUS,  OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER # cancer diagnoses
+)
+
+```
+
+cleaning education:
+
+```{r}
+# 1: No Dgree
+
+fyc17$HIDEG<-replace(fyc17$HIDEG, fyc17$HIDEG %in% c(2,3,7),2)# 2: GED or High school  2,3
+
+fyc17$HIDEG<-replace(fyc17$HIDEG, fyc17$HIDEG ==4,3) # 3: Bachelors
+
+
+fyc17$HIDEG<-replace(fyc17$HIDEG, fyc17$HIDEG %in% c(5,6),4) # 4: Master's and doctorate
+
+
+table(fyc17$PANEL, fyc17$HIDEG)
+
+
+
+fyc17<-rename(fyc17, EDUC=HIDEG)
+
+
+
+
+```
+
+
+
+#2016
+
+```{r}
+
+fyc16  <- fyc2016 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
+    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # Cancer diagnoses
+    HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
+    MAMOGR53, # Breast Cancer
+    PSA53 # Prostate Cancer:
+)
+
+
+
+```
+I need to make education consistent for all years
+```{r}
+# 1: No Dgree
+
+fyc16$HIDEG<-replace(fyc16$HIDEG, fyc16$HIDEG %in% c(2,3,7),2)# 2: GED or High school  2,3
+
+fyc16$HIDEG<-replace(fyc16$HIDEG, fyc16$HIDEG ==4,3) # 3: Bachelors
+
+
+fyc16$HIDEG<-replace(fyc16$HIDEG, fyc16$HIDEG %in% c(5,6),4) # 4: Master's and doctorate
+
+
+table(fyc16$PANEL, fyc16$HIDEG)
+
+
+
+fyc16<-rename(fyc16, EDUC=HIDEG)
+
+
+
+
+```
+
+Now creating a cancer screening variables:
+
+I decided to only look at colonscopy and semidoscopy and not the  BLD STOOL TST
+thus I drop the BSTST53, BSTSRE53,
+
+```{r}
+
+CLNTST53
+
+ADCLNS42
+
+```
+
+
+#2015
+
+```{r}
+
+fyc15  <- fyc2015 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231, EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
+    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HYSTER53, PAPSMR53, #Cervical Cancer
+    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
+    MAMOGR53, # Breast Cancer
+    PSA53 # Prostate Cancer:
+)
+
+
+```
+
+for education half of the panel is following the year before thus need to be fixed
+```{r}
+
+
+fyc15$EDRECODE<-replace(fyc15$EDRECODE, fyc15$EDRECODE %in% 0:12, 1)
+fyc15$EDRECODE<-replace(fyc15$EDRECODE, fyc15$EDRECODE %in% 13:14, 2)
+fyc15$EDRECODE<-replace(fyc15$EDRECODE, fyc15$EDRECODE==15, 3)
+fyc15$EDRECODE<-replace(fyc15$EDRECODE, fyc15$EDRECODE==16, 4)
+
+fyc15<-rename(fyc15, EDUC=EDRECODE)
+
+table(fyc15$EDUC)
+# 1: No Dgree
+
+# 2: GED or High school  2,3
+
+# 3: Bachelors
+
+# 4: Master's and doctorate
+
+
+```
+
+ 
+#2014
+
+ There was no  HIDEG in this year data there is info about in documanation a subsittue variable used called
+ EDRECODE read further in : 
+https://meps.ahrq.gov/data_stats/download_data/pufs/h155/h155doc.shtml#2582FamilyOrigins
+
+```{r}
+
+
+fyc14  <- fyc2014 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION, EDRECODE , # Demographic
+    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HYSTER53, PAPSMR53, #Cervical Cancer
+    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
+    MAMOGR53, # Breast Cancer
+    PSA53 # Prostate Cancer:
+)
+
+
+```
+
+education
+```{r}
+
+
+fyc14$EDRECODE<-replace(fyc14$EDRECODE, fyc14$EDRECODE %in% 0:12, 1)
+fyc14$EDRECODE<-replace(fyc14$EDRECODE, fyc14$EDRECODE %in% 13:14, 2)
+fyc14$EDRECODE<-replace(fyc14$EDRECODE, fyc14$EDRECODE==15, 3)
+fyc14$EDRECODE<-replace(fyc14$EDRECODE, fyc14$EDRECODE==16, 4)
+
+fyc14<-rename(fyc14, EDUC=EDRECODE)
+
+table(fyc14$EDUC)
+# 1: No Dgree
+
+# 2: GED or High school  2,3
+
+# 3: Bachelors
+
+# 4: Master's and doctorate
+
+
+```
+
+
+#2013
+ 
+ Neither EDUCYR nor HIDEG exist in this dataset instead there are: EDUYRDG, EDRECODE
+
+```{r}
+
+
+fyc13  <- fyc2013 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION, EDRECODE, # Demographic
+    BORNUSA,USBORN42, LIVEUS42,YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HYSTER53, PAPSMR53, #Cervical Cancer
+    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
+    MAMOGR53, # Breast Cancer
+    PSA53 # Prostate Cancer:
+)
+
+   
+
+```
+fixing the education 
+
+```{r}
+
+fyc13$EDRECODE<-replace(fyc13$EDRECODE, fyc13$EDRECODE %in% 0:12, 1)
+fyc13$EDRECODE<-replace(fyc13$EDRECODE, fyc13$EDRECODE %in% 13:14, 2)
+fyc13$EDRECODE<-replace(fyc13$EDRECODE, fyc13$EDRECODE==15, 3)
+fyc13$EDRECODE<-replace(fyc13$EDRECODE, fyc13$EDRECODE==16, 4)
+
+fyc13<-rename(fyc13, EDUC=EDRECODE)
+
+# 1: No Dgree
+
+# 2: GED or High school  2,3
+
+# 3: Bachelors
+
+# 4: Master's and doctorate
+
+
+```
+
+due to previous year change in US born some changes need to be done with this dataset:
+
+```{r}
+  # both US born variable mixed in one variable
+        fyc13$BORNUSA<-ifelse(fyc13$PANEL==18,fyc13$BORNUSA,fyc13$USBORN42)
+            # USBORN42 is extra and need to be dropped
+    # same thing with years in US    
+        fyc13$YRSINUS<-ifelse(fyc13$PANEL==18,fyc13$YRSINUS,fyc13$LIVEUS42)
+
+    table(fyc13$PANEL,fyc13$BORNUSA)
+    fyc13 = subset(fyc13, select = -c(USBORN42,LIVEUS42))
+
+    
+    
+    
+        table(fyc13$PANEL,fyc13$LIVEUS42)
+
+            table(fyc13$PANEL,fyc13$YRSINUS)
+
+
+```
+
+
+
+#2012
+
+Name change in US born and years lived in US. I didn't rename it yet because there might be differences.
+
+```{r}
+
+
+## 
+fyc12  <- fyc2012 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
+    USBORN42, USLIVE42, ENGCMF42,ENGSPK42, LANGHM42, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HYSTER53, PAPSMR53, #Cervical Cancer
+    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
+    MAMOGR53, # Breast Cancer
+    PSA53 # Prostate Cancer:
+)
+
+
+
+## there should be a change in YLINU afterward USLIVE42 can be dropped
+
+
+
+```
+
+Further investigation showed that years in us was not only different name but it was also continuous while for after 2013 it was categorical data 
+so I changed it as follow:
+
+First, renamed the USBORN42 and  USLIVE42 to make it consistent with the rest
+```{r}
+
+  fyc12 <- fyc12 %>%
+            rename(
+                BORNUSA  = USBORN42,
+                YRSINUS= USLIVE42 ,
+                EDUC=EDRECODE
+                ) 
+```
+
+
+then make YRSINUS categorical like other years
+
+```{r}
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 1:4,2)  # 2 1 YR., LESS THAN 5 YRS.
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 5:9,3)  # 3 5 YRS., LESS THAN 10 YRS.
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS %in% 10:14,4)  # 4 10 YRS., LESS THAN 15 YRS.
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS >=15,5)  # 5 15 YEARS OR MORE
+        fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS==0,1)  # 1 LESS THAN 1 YEAR
+
+```
+
+fix the education
+```{r}
+
+fyc12$EDUC<-replace(fyc12$EDUC, fyc12$EDUC %in% 0:12, 1)
+fyc12$EDUC<-replace(fyc12$EDUC, fyc12$EDUC %in% 13:14, 2)
+fyc12$EDUC<-replace(fyc12$EDUC, fyc12$EDUC==15, 3)
+fyc12$EDUC<-replace(fyc12$EDUC, fyc12$EDUC==16, 4)
+
+# 1: No Dgree
+
+# 2: GED or High school  2,3
+
+# 3: Bachelors
+
+# 4: Master's and doctorate
+
+
+
+```
+
+
+#2011
+
+In addition to the US-Born and everything there is a difference with RACE variable as well 
+
+```{r}
+
+
+fyc11  <- fyc2011 %>% select(
+    DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
+    AGE, SEX, RACEX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
+    USBORN42, USLIVE42, ENGCMF42,ENGSPK42, LANGHM42, ADLANG42, # Immigration
+    INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HYSTER53, PAPSMR53, #Cervical Cancer
+    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
+    MAMOGR53, # Breast Cancer
+    PSA53 # Prostate Cancer:
+)
+         
+
+
+```
+
+ start with the US borns: 
+
+Same as 2012 first rename the USBORN42 and  USLIVE42 to make it consistent with the rest
+```{r}
+  fyc11<- fyc11 %>%
+                rename(
+                    BORNUSA= USBORN42,
+                    YRSINUS= USLIVE42,
+                    RACETHX=RACEX,
+                    EDUC=EDRECODE) 
+```
+
+then make the USlive categorical 
+
+```{r}
+
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 1:4,2)  # 2 1 YR., LESS THAN 5 YRS.
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 5:9,3)  # 3 5 YRS., LESS THAN 10 YRS.
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS %in% 10:14,4)  # 4 10 YRS., LESS THAN 15 YRS.
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS >=15,5) # 5 15 YEARS OR MORE
+            fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS==0,1)  #  1 LESS THAN 1 YEAR
+
+```
+
+Now move on to the race variable, let's merge ethnicity into the race
+
+
+```{r}
+fyc11$RACETHX<-fyc11$RACETHX+1
+fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX %in% c(4, 6, 7),6)  # 3 5 YRS., LESS THAN 10 YRS.
+fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX==5,4)  # 3 5 YRS., LESS THAN 10 YRS.
+fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX==6,5)  # 3 5 YRS., LESS THAN 10 YRS.
+
+fyc11$RACETHX<-ifelse(fyc11$HISPANX==1,1,fyc11$RACETHX)
+
+
+
+```
+fixing the education creating a new variable EDUC for all years
+
+```{r}
+
+
+
+fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC %in% 0:12, 1) # 1: No Dgree
+fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC %in% 13:14, 2) # 2: GED or High school  2,3
+
+fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC==15, 3) # 3: Bachelors
+fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC==16, 4) # 4: Master's and doctorate
+
+
+table(fyc11$PANEL, fyc11$EDUC)
+
+
+
+
+
+
+
+
+
+```
+
+
+
+
+

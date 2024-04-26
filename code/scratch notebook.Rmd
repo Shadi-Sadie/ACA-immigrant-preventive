@@ -176,7 +176,7 @@ For cancer screening previously MEPS was gathering info for indiviual in round 3
 
 ```{r}
 
-ADBRST42,ADMMGR42, # Breast Cancer
+ADBRST42, ADMMGR42 , # Breast Cancer
 CABREAST
 table(fyc18$ADBRST42)
 table(fyc18$CANCERDX)
@@ -235,6 +235,14 @@ fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS==0,1)  # 0: Single
 
 
 
+```
+I want to find duplicated ID
+
+```{r}
+data<-rbind(fyc17,fyc18)
+
+
+b<-data$DUPERSID[duplicated(data$PANEL)]
 ```
 
 

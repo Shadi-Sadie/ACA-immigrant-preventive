@@ -21,6 +21,18 @@ library(labelled)
 library(broom)
 ```
 
+```{r}
+
+wd <- list()
+# commonly used paths in my working directory
+wd$data   <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/data/"
+wd$output <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/output/"
+wd$texts <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/text/"
+wd$codes <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/codes/R/"
+
+
+```
+
 # Set survey option for lonely PSUs
 ```{r}
 options(survey.lonely.psu="adjust")
@@ -70,6 +82,8 @@ years 2011 to 2019 are my timeline span, however I need year 2020 in order to cr
 ```{r}
 
 fyc2020<-read_MEPS(year = 2020, type = "FYC")
+fyc2020$YEAR<-2020
+
 
 ```
 
@@ -88,8 +102,63 @@ fyc19 <- fyc2019 %>% select(
                 CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER # cancer diagnoses
      )
 
+fyc19$YEAR<-2019
 
 ```
+
+Cancer screening fixed
+
+```{r}
+# first fixing 2020 cancer
+
+fyc2020<-fyc2020 %>% rename( 
+    CLNTST53 = ADCLNS42,
+    SGMTST53 = ADSGMD42,
+    MAMOGR53 = ADMMGR42
+)
+
+fyc2020$CLNTST53<-replace(fyc2020$CLNTST53, fyc2020$CLNTST53 %in% c(2,3),0) # 0 : No colonscopy within 10 years
+fyc2020$SGMTST53<-replace(fyc2020$SGMTST53, fyc2020$SGMTST53 %in% c(2,3),0) # 0 : No semidoscopy within 5 years
+fyc2020$MAMOGR53<-replace(fyc2020$MAMOGR53, fyc2020$MAMOGR53 %in% c(2,3),0) # 0 : No colonscopy within 2 years
+
+fyc19$CLNTST53<-99999
+fyc19$SGMTST53<-99999
+fyc19$MAMOGR53<-99999
+
+ 
+matching_indices <- match(fyc19$DUPERSID, fyc2020$DUPERSID)
+
+       
+replacement <- fyc2020$SGMTST53[matching_indices[!is.na(matching_indices)]]
+fyc19$SGMTST53 <- replace(fyc19$SGMTST53, !is.na(matching_indices)&fyc19$PANEL==24, replacement)
+replacement <- fyc2020$CLNTST53[matching_indices[!is.na(matching_indices)]]
+fyc19$CLNTST53 <- replace(fyc19$CLNTST53, !is.na(matching_indices)&fyc19$PANEL==24, replacement)
+replacement <- fyc2020$MAMOGR53[matching_indices[!is.na(matching_indices)]]
+fyc19$MAMOGR53 <- replace(fyc19$MAMOGR53, !is.na(matching_indices)&fyc19$PANEL==24, replacement)
+
+
+
+matching_indices <- match(fyc19$DUPERSID, fyc18$DUPERSID)
+fyc19$CLNTST53[!is.na(matching_indices)]<- fyc18$CLNTST53[matching_indices[!is.na(matching_indices)]]
+fyc19$SGMTST53[!is.na(matching_indices)] <- fyc18$SGMTST53[matching_indices[!is.na(matching_indices)]]
+fyc19$MAMOGR53[!is.na(matching_indices)] <- fyc18$MAMOGR53[matching_indices[!is.na(matching_indices)]]
+
+
+table(fyc2020$PANEL, fyc2020$MAMOGR53)
+table(fyc18$PANEL)
+table(fyc2020$PANEL)
+
+table(fyc18$PANEL, fyc18$MAMOGR53)
+table(fyc19$PANEL, fyc19$SGMTST53)
+table(fyc19$PANEL, fyc19$CLNTST53)
+
+
+
+```
+
+
+
+
 fixing education:
 
 ```{r}
@@ -117,13 +186,35 @@ fyc18  <- fyc2018 %>% select(
     BORNUSA, YRSINUS, OTHLGSPK,  HWELLSPK, WHTLGSPK, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
-    ADUTRM42, ADPAP42,ADPAPG42, #Cervical Cancer
-    ADCOLN42, ADCLNS42, ADSGMD42, ADBLDS42, # Colorectal Cancer
-    ADBRST42,ADMMGR42, # Breast Cancer
-    ADPROS42, PSA53 # Prostate Cancer
+   #  ADPAP42,ADPAPG42, #Cervical Cancer
+    ADCLNS42, ADSGMD42, # Colorectal Cancer   ADCOLN42,
+    ADMMGR42, # Breast Cancer  ADBRST42,
+   # PSA53 # Prostate Cancer ADPROS42,
 )
 
+fyc18$YEAR<-2018
+
 ```
+cleaning cancer,Cancer screening be droping the ADBLDS42 (Blood Stool) and cervical cancer screening
+renaming  variables
+
+```{r}
+
+fyc18<-fyc18 %>% rename( 
+    CLNTST53 = ADCLNS42,
+    SGMTST53 = ADSGMD42,
+    MAMOGR53 = ADMMGR42
+)
+
+fyc18$CLNTST53<-replace(fyc18$CLNTST53, fyc18$CLNTST53 %in% c(2,3),0) # 0 : No colonscopy within 10 years
+fyc18$SGMTST53<-replace(fyc18$SGMTST53, fyc18$SGMTST53 %in% c(2,3),0) # 0 : No semidoscopy within 5 years
+fyc18$MAMOGR53<-replace(fyc18$MAMOGR53, fyc18$MAMOGR53 %in% c(2,3),0) # 0 : No colonscopy within 2 years
+
+
+
+```
+
+
 
 cleaning education:
 ```{r}
@@ -143,6 +234,7 @@ fyc18<-rename(fyc18, EDUC=HIDEG)
 #2017
 
 ```{r}
+
 fyc17  <- fyc2017 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
@@ -150,6 +242,40 @@ fyc17  <- fyc2017 %>% select(
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER # cancer diagnoses
 )
+fyc17$YEAR<-2017
+
+
+```
+
+
+cleaning cancer:
+```{r}
+
+fyc17$b <- paste0(as.character(fyc17$PANEL),fyc17$DUPERSID) # there is slight difference between 2017 and 2018 naming this code is fixing that
+
+#bringing estimate for the person from 2018 to 2017
+
+fyc17$CLNTST53<-99999
+fyc17$SGMTST53<-99999
+fyc17$MAMOGR53<-99999
+
+matching_indices <- match(fyc17$b, fyc18$DUPERSID)
+fyc17$CLNTST53[!is.na(matching_indices)] <- fyc18$CLNTST53[matching_indices[!is.na(matching_indices)]]
+fyc17$SGMTST53[!is.na(matching_indices)] <- fyc18$SGMTST53[matching_indices[!is.na(matching_indices)]]
+fyc17$MAMOGR53[!is.na(matching_indices)] <- fyc18$MAMOGR53[matching_indices[!is.na(matching_indices)]]
+
+
+# also need to bring estimate from 2016 to 2017 
+
+matching_indices <- match(fyc17$DUPERSID, fyc16$DUPERSID)
+fyc17$CLNTST53[!is.na(matching_indices)] <- fyc16$CLNTST53[matching_indices[!is.na(matching_indices)]]
+fyc17$SGMTST53[!is.na(matching_indices)] <- fyc16$SGMTST53[matching_indices[!is.na(matching_indices)]]
+fyc17$MAMOGR53[!is.na(matching_indices)] <- fyc16$MAMOGR53[matching_indices[!is.na(matching_indices)]]
+
+fyc17 <- subset(fyc17, select = -b)
+
+
+	
 
 ```
 
@@ -189,15 +315,47 @@ fyc16  <- fyc2016 %>% select(
     BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # Cancer diagnoses
-    HYSTER53, PAPSMR53, #Cervical Cancer
-    CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
-    MAMOGR53, # Breast Cancer
-    PSA53 # Prostate Cancer:
+    # HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
+    MAMOGR53 # , # Breast Cancer
+   # PSA53 # Prostate Cancer:
 )
-
+fyc16$YEAR<-2016
 
 
 ```
+
+
+I decided to only look at colonscopy and semidoscopy and not the  BLD STOOL TST
+thus I drop the BSTST53, BSTSRE53, also will not look at the cervical and prostate 
+```{r}
+
+#Colonscopy
+  # ifelse(data$CACOLON==1, data$ADCLNS42==-1,data$ADCLNS42)
+fyc16$CLNTST53<-ifelse(fyc16$AGE<50,-1,fyc16$CLNTST53)
+fyc16$CLNTST53<-ifelse(fyc16$CACOLON==1,-1,fyc16$CLNTST53)
+fyc16$CLNTST53<-replace(fyc16$CLNTST53, fyc16$CLNTST53 %in% 1:5 , 1)  # YES Colonscopy within 10 years
+fyc16$CLNTST53<-replace(fyc16$CLNTST53, fyc16$CLNTST53 %in% c(6,7) , 0) # NO 
+
+#Semidoscoy
+fyc16$SGMTST53<-ifelse(fyc16$AGE<50,-1,fyc16$SGMTST53)
+fyc16$SGMTST53<-ifelse(fyc16$CACOLON==1,-1,fyc16$SGMTST53)
+fyc16$SGMTST53<-replace(fyc16$SGMTST53, fyc16$SGMTST53 %in% 1:4 , 1)  # YES Colonscopy within 10 years
+fyc16$SGMTST53<-replace(fyc16$SGMTST53, fyc16$SGMTST53 %in% c(5,6,7) , 0) # NO 
+
+#mamogram
+table(fyc16$MAMOGR53)
+
+fyc16$MAMOGR53<-ifelse(fyc16$AGE<50,-1,fyc16$MAMOGR53)
+fyc16$MAMOGR53<-ifelse(fyc16$CABREAST==1,-1,fyc16$MAMOGR53)
+fyc16$MAMOGR53<-replace(fyc16$MAMOGR53, fyc16$MAMOGR53 %in% 1:2 , 1)  # YES Colonscopy within 10 years
+fyc16$MAMOGR53<-replace(fyc16$MAMOGR53, fyc16$MAMOGR53 %in% 3:6 , 0) # NO 
+
+
+```
+
+
+
 I need to make education consistent for all years
 ```{r}
 # 1: No Dgree
@@ -223,16 +381,6 @@ fyc16<-rename(fyc16, EDUC=HIDEG)
 
 Now creating a cancer screening variables:
 
-I decided to only look at colonscopy and semidoscopy and not the  BLD STOOL TST
-thus I drop the BSTST53, BSTSRE53,
-
-```{r}
-
-CLNTST53
-
-ADCLNS42
-
-```
 
 
 #2015
@@ -240,19 +388,53 @@ ADCLNS42
 ```{r}
 
 fyc15  <- fyc2015 %>% select(
+    
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231, EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
     BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
-    HYSTER53, PAPSMR53, #Cervical Cancer
-    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
-    MAMOGR53, # Breast Cancer
-    PSA53 # Prostate Cancer:
+    # HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
+    MAMOGR53 # , # Breast Cancer
+   # PSA53 # Prostate Cancer:
 )
+
+fyc15$YEAR<-2015
+
+```
+
+Cancer recoding
+```{r}
+
+#Colonscopy
+  # ifelse(data$CACOLON==1, data$ADCLNS42==-1,data$ADCLNS42)
+ 
+table(fyc15$CLNTST53)
+
+fyc15$CLNTST53<-ifelse(fyc15$AGE<50,-1,fyc15$CLNTST53)
+fyc15$CLNTST53<-ifelse(fyc15$CACOLON==1,-1,fyc15$CLNTST53)
+fyc15$CLNTST53<-replace(fyc15$CLNTST53, fyc15$CLNTST53 %in% 1:5 , 1)  # YES Colonscopy within 10 years
+fyc15$CLNTST53<-replace(fyc15$CLNTST53, fyc15$CLNTST53 %in% c(6,7) , 0) # NO 
+table(fyc15$CLNTST53)
+
+#Semidoscoy
+fyc15$SGMTST53<-ifelse(fyc15$AGE<50,-1,fyc15$SGMTST53)
+fyc15$SGMTST53<-ifelse(fyc15$CACOLON==1,-1,fyc15$SGMTST53)
+fyc15$SGMTST53<-replace(fyc15$SGMTST53, fyc15$SGMTST53 %in% 1:4 , 1)  # YES Colonscopy within 10 years
+fyc15$SGMTST53<-replace(fyc15$SGMTST53, fyc15$SGMTST53 %in% c(5,6,7) , 0) # NO 
+
+#mamogram
+table(fyc15$MAMOGR53)
+
+fyc15$MAMOGR53<-ifelse(fyc15$AGE<50,-1,fyc15$MAMOGR53)
+fyc15$MAMOGR53<-ifelse(fyc15$CABREAST==1,-1,fyc15$MAMOGR53)
+fyc15$MAMOGR53<-replace(fyc15$MAMOGR53, fyc15$MAMOGR53 %in% 1:2 , 1)  # YES Colonscopy within 10 years
+fyc15$MAMOGR53<-replace(fyc15$MAMOGR53, fyc15$MAMOGR53 %in% 3:6 , 0) # NO 
 
 
 ```
+
 
 for education half of the panel is following the year before thus need to be fixed
 ```{r}
@@ -277,6 +459,8 @@ table(fyc15$EDUC)
 
 ```
 
+
+
  
 #2014
 
@@ -286,21 +470,55 @@ https://meps.ahrq.gov/data_stats/download_data/pufs/h155/h155doc.shtml#2582Famil
 
 ```{r}
 
-
 fyc14  <- fyc2014 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION, EDRECODE , # Demographic
     BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
-    HYSTER53, PAPSMR53, #Cervical Cancer
-    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
-    MAMOGR53, # Breast Cancer
-    PSA53 # Prostate Cancer:
+    # HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
+    MAMOGR53 # , # Breast Cancer
+   # PSA53 # Prostate Cancer:
 )
+fyc14$YEAR<-2014
 
 
 ```
+
+
+Cancer recoding
+```{r}
+
+#Colonscopy
+  # ifelse(data$CACOLON==1, data$ADCLNS42==-1,data$ADCLNS42)
+ 
+table(fyc14$CLNTST53)
+
+fyc14$CLNTST53<-ifelse(fyc14$AGE<50,-1,fyc14$CLNTST53)
+fyc14$CLNTST53<-ifelse(fyc14$CACOLON==1,-1,fyc14$CLNTST53)
+fyc14$CLNTST53<-replace(fyc14$CLNTST53, fyc14$CLNTST53 %in% 1:5 , 1)  # YES Colonscopy within 10 years
+fyc14$CLNTST53<-replace(fyc14$CLNTST53, fyc14$CLNTST53 %in% c(6,7) , 0) # NO 
+
+#Semidoscoy
+fyc14$SGMTST53<-ifelse(fyc14$AGE<50,-1,fyc14$SGMTST53)
+fyc14$SGMTST53<-ifelse(fyc14$CACOLON==1,-1,fyc14$SGMTST53)
+fyc14$SGMTST53<-replace(fyc14$SGMTST53, fyc14$SGMTST53 %in% 1:4 , 1)  # YES Colonscopy within 10 years
+fyc14$SGMTST53<-replace(fyc14$SGMTST53, fyc14$SGMTST53 %in% c(5,6,7) , 0) # NO 
+
+#mamogram
+table(fyc14$PANEL,fyc14$MAMOGR53)
+
+fyc14$MAMOGR53<-ifelse(fyc14$AGE<50,-1,fyc14$MAMOGR53)
+fyc14$MAMOGR53<-ifelse(fyc14$CABREAST==1,-1,fyc14$MAMOGR53)
+fyc14$MAMOGR53<-replace(fyc14$MAMOGR53, fyc14$MAMOGR53 %in% 1:2 , 1)  # YES Colonscopy within 10 years
+fyc14$MAMOGR53<-replace(fyc14$MAMOGR53, fyc14$MAMOGR53 %in% 3:6 , 0) # NO 
+
+
+```
+
+
+
 
 education
 ```{r}
@@ -339,15 +557,52 @@ fyc13  <- fyc2013 %>% select(
     BORNUSA,USBORN42, LIVEUS42,YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
-    HYSTER53, PAPSMR53, #Cervical Cancer
-    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
-    MAMOGR53, # Breast Cancer
-    PSA53 # Prostate Cancer:
+     # HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
+    MAMOGR53 # , # Breast Cancer
+   # PSA53 # Prostate Cancer:
 )
+fyc13$YEAR<-2013
 
    
 
 ```
+
+
+Cancer recoding
+```{r}
+
+#Colonscopy
+  # ifelse(data$CACOLON==1, data$ADCLNS42==-1,data$ADCLNS42)
+ 
+table(fyc13$CLNTST53)
+
+fyc13$CLNTST53<-ifelse(fyc13$AGE<50,-1,fyc13$CLNTST53)
+fyc13$CLNTST53<-ifelse(fyc13$CACOLON==1,-1,fyc13$CLNTST53)
+fyc13$CLNTST53<-replace(fyc13$CLNTST53, fyc13$CLNTST53 %in% 1:5 , 1)  # YES Colonscopy within 10 years
+fyc13$CLNTST53<-replace(fyc13$CLNTST53, fyc13$CLNTST53 %in% c(6,7) , 0) # NO 
+table(fyc13$CLNTST53)
+
+#Semidoscoy
+fyc13$SGMTST53<-ifelse(fyc13$AGE<50,-1,fyc13$SGMTST53)
+fyc13$SGMTST53<-ifelse(fyc13$CACOLON==1,-1,fyc13$SGMTST53)
+fyc13$SGMTST53<-replace(fyc13$SGMTST53, fyc13$SGMTST53 %in% 1:4 , 1)  # YES Colonscopy within 10 years
+fyc13$SGMTST53<-replace(fyc13$SGMTST53, fyc13$SGMTST53 %in% c(5,6,7) , 0) # NO 
+
+#mamogram
+table(fyc13$MAMOGR53)
+
+fyc13$MAMOGR53<-ifelse(fyc13$AGE<50,-1,fyc13$MAMOGR53)
+fyc13$MAMOGR53<-ifelse(fyc13$CABREAST==1,-1,fyc13$MAMOGR53)
+fyc13$MAMOGR53<-replace(fyc13$MAMOGR53, fyc13$MAMOGR53 %in% 1:2 , 1)  # YES Colonscopy within 10 years
+fyc13$MAMOGR53<-replace(fyc13$MAMOGR53, fyc13$MAMOGR53 %in% 3:6 , 0) # NO 
+
+
+```
+
+
+
+
 fixing the education 
 
 ```{r}
@@ -385,10 +640,6 @@ due to previous year change in US born some changes need to be done with this da
     
     
     
-        table(fyc13$PANEL,fyc13$LIVEUS42)
-
-            table(fyc13$PANEL,fyc13$YRSINUS)
-
 
 ```
 
@@ -401,18 +652,21 @@ Name change in US born and years lived in US. I didn't rename it yet because the
 ```{r}
 
 
-## 
+##
+
 fyc12  <- fyc2012 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
     USBORN42, USLIVE42, ENGCMF42,ENGSPK42, LANGHM42, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
-    HYSTER53, PAPSMR53, #Cervical Cancer
-    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
-    MAMOGR53, # Breast Cancer
-    PSA53 # Prostate Cancer:
+    # HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
+    MAMOGR53 # , # Breast Cancer
+   # PSA53 # Prostate Cancer:
 )
+
+fyc12$YEAR<-2012
 
 
 
@@ -437,6 +691,7 @@ First, renamed the USBORN42 and  USLIVE42 to make it consistent with the rest
 ```
 
 
+
 then make YRSINUS categorical like other years
 
 ```{r}
@@ -447,6 +702,41 @@ then make YRSINUS categorical like other years
         fyc12$YRSINUS<-replace(fyc12$YRSINUS,fyc12$YRSINUS==0,1)  # 1 LESS THAN 1 YEAR
 
 ```
+
+
+Cancer recoding
+```{r}
+
+#Colonscopy
+  # ifelse(data$CACOLON==1, data$ADCLNS42==-1,data$ADCLNS42)
+ 
+table(fyc12$CLNTST53)
+
+fyc12$CLNTST53<-ifelse(fyc12$AGE<50,-1,fyc12$CLNTST53)
+fyc12$CLNTST53<-ifelse(fyc12$CACOLON==1,-1,fyc12$CLNTST53)
+fyc12$CLNTST53<-replace(fyc12$CLNTST53, fyc12$CLNTST53 %in% 1:5 , 1)  # YES Colonscopy within 10 years
+fyc12$CLNTST53<-replace(fyc12$CLNTST53, fyc12$CLNTST53 %in% c(6,7) , 0) # NO 
+table(fyc15$CLNTST53)
+
+#Semidoscoy
+fyc12$SGMTST53<-ifelse(fyc12$AGE<50,-1,fyc12$SGMTST53)
+fyc12$SGMTST53<-ifelse(fyc12$CACOLON==1,-1,fyc12$SGMTST53)
+fyc12$SGMTST53<-replace(fyc12$SGMTST53, fyc12$SGMTST53 %in% 1:4 , 1)  # YES Colonscopy within 10 years
+fyc12$SGMTST53<-replace(fyc12$SGMTST53, fyc12$SGMTST53 %in% c(5,6,7) , 0) # NO 
+
+#mamogram
+table(fyc12$MAMOGR53)
+
+fyc12$MAMOGR53<-ifelse(fyc12$AGE<50,-1,fyc12$MAMOGR53)
+fyc12$MAMOGR53<-ifelse(fyc12$CABREAST==1,-1,fyc12$MAMOGR53)
+fyc12$MAMOGR53<-replace(fyc12$MAMOGR53, fyc12$MAMOGR53 %in% 1:2 , 1)  # YES Colonscopy within 10 years
+fyc12$MAMOGR53<-replace(fyc12$MAMOGR53, fyc12$MAMOGR53 %in% 3:6 , 0) # NO 
+
+
+```
+
+
+
 
 fix the education
 ```{r}
@@ -482,11 +772,12 @@ fyc11  <- fyc2011 %>% select(
     USBORN42, USLIVE42, ENGCMF42,ENGSPK42, LANGHM42, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
-    HYSTER53, PAPSMR53, #Cervical Cancer
-    BSTST53, BSTSRE53, CLNTST53, CLNTRE53,SGMTST53,SGMTRE53 , # Colorectal Cancer
-    MAMOGR53, # Breast Cancer
-    PSA53 # Prostate Cancer:
+    # HYSTER53, PAPSMR53, #Cervical Cancer
+    CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
+    MAMOGR53 # , # Breast Cancer
+   # PSA53 # Prostate Cancer:
 )
+fyc11$YEAR<-2011
          
 
 
@@ -519,6 +810,39 @@ then make the USlive categorical
 Now move on to the race variable, let's merge ethnicity into the race
 
 
+Cancer recoding
+```{r}
+
+#Colonscopy
+  # ifelse(data$CACOLON==1, data$ADCLNS42==-1,data$ADCLNS42)
+ 
+table(fyc11$CLNTST53)
+
+fyc11$CLNTST53<-ifelse(fyc11$AGE<50,-1,fyc11$CLNTST53)
+fyc11$CLNTST53<-ifelse(fyc11$CACOLON==1,-1,fyc11$CLNTST53)
+fyc11$CLNTST53<-replace(fyc11$CLNTST53, fyc11$CLNTST53 %in% 1:5 , 1)  # YES Colonscopy within 10 years
+fyc11$CLNTST53<-replace(fyc11$CLNTST53, fyc11$CLNTST53 %in% c(6,7) , 0) # NO 
+table(fyc15$CLNTST53)
+
+#Semidoscoy
+fyc11$SGMTST53<-ifelse(fyc11$AGE<50,-1,fyc11$SGMTST53)
+fyc11$SGMTST53<-ifelse(fyc11$CACOLON==1,-1,fyc11$SGMTST53)
+fyc11$SGMTST53<-replace(fyc11$SGMTST53, fyc11$SGMTST53 %in% 1:4 , 1)  # YES Colonscopy within 10 years
+fyc11$SGMTST53<-replace(fyc11$SGMTST53, fyc11$SGMTST53 %in% c(5,6,7) , 0) # NO 
+
+#mamogram
+table(fyc11$MAMOGR53)
+
+fyc11$MAMOGR53<-ifelse(fyc11$AGE<50,-1,fyc11$MAMOGR53)
+fyc11$MAMOGR53<-ifelse(fyc11$CABREAST==1,-1,fyc11$MAMOGR53)
+fyc11$MAMOGR53<-replace(fyc11$MAMOGR53, fyc11$MAMOGR53 %in% 1:2 , 1)  # YES Colonscopy within 10 years
+fyc11$MAMOGR53<-replace(fyc11$MAMOGR53, fyc11$MAMOGR53 %in% 3:6 , 0) # NO 
+
+
+```
+
+
+
 ```{r}
 fyc11$RACETHX<-fyc11$RACETHX+1
 fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX %in% c(4, 6, 7),6)  # 3 5 YRS., LESS THAN 10 YRS.
@@ -535,7 +859,6 @@ fixing the education creating a new variable EDUC for all years
 ```{r}
 
 
-
 fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC %in% 0:12, 1) # 1: No Dgree
 fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC %in% 13:14, 2) # 2: GED or High school  2,3
 
@@ -543,7 +866,7 @@ fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC==15, 3) # 3: Bachelors
 fyc11$EDUC<-replace(fyc11$EDUC, fyc11$EDUC==16, 4) # 4: Master's and doctorate
 
 
-table(fyc11$PANEL, fyc11$EDUC)
+table(fyc11$PANEL,fyc11$YEAR)
 
 
 
@@ -552,6 +875,19 @@ table(fyc11$PANEL, fyc11$EDUC)
 
 
 
+
+```
+
+
+# Merge 2011 to 2016 in one data set
+```{r}
+
+
+
+data = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc17,fyc18,fyc19) %>%
+  mutate(poolwt = PERWT / 9)
+
+save(data, file =paste0(wd$data,"RAWMEPS.RData"))
 
 ```
 

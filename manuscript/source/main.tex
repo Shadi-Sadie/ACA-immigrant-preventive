@@ -33,12 +33,12 @@
 
 %%% info for title page %%%
 
-\title{Effect of Medicaid Expansion on Insurance Coverage among Foreign-born Adults}
+\title{Chapter 2: Effect of Medicaid Expansion on Cancer Screening, Comparison Foreign-born and Native}
 \shorttitle{Medicaid Expansion and Foreign-born Adults}
-\author{Shadi Seyedi}
-\affiliation{University of Maryland Baltimore County}
-\leftheader{Weiss}
-\abstract{}
+%\author{Shadi Seyedi}
+%\affiliation{University of Maryland Baltimore County}
+%\leftheader{Weiss}
+%\abstract{}
 \keywords{Medicaid Expansion, Foreign Born, Insurance Gain}
 %\authornote{
 %\addORCIDlink{Shadi Seyedi }{0000-0000-0000-0000}
@@ -50,6 +50,87 @@
 \begin{document}
 
 \maketitle
+
+
+\section{Introduction}
+
+Access to preventive care services plays a pivotal role in healthcare, influencing health outcomes and reducing the burden of chronic diseases \parencite{bloodworth_variation_2018}. 
+Nevertheless, disparities in preventive care utilization persist among various demographic groups in the United States, raising concerns about health equity \parencite{goel_racial_2003}. A particularly vulnerable group in this context is foreign-born individuals, who often encounter unique challenges when seeking healthcare services \parencite{adigun_minding_2021}
+
+Foreign-born individuals represent a diverse group with varying immigration statuses, cultural backgrounds, and linguistic capabilities. Their experiences with healthcare access and utilization are influenced by a complex interplay of socio-economic factors, immigration history, and healthcare policies. Of particular interest is the role of Medicaid, a federal and state health insurance program designed to provide coverage for low-income individuals and families, including a significant proportion of foreign-born populations \parencite{bustamante_health_2019}.While Medicaid expansion under the Affordable Care Act (ACA) aimed to increase access to healthcare services for underserved populations, including foreign-born individuals, the extent to which this policy has positively influenced preventive care utilization within this demographic remains unclear \parencite{li_gains_2021}. 
+
+In Paper 1, I demonstrated that Medicaid expansion improved potential access,  resulting in increased insurance coverage and Medicaid coverage among low-income foreign-born and US-born individuals. While theory suggests that such an increase in insurance, as an enabling resource, should boost the likelihood of utilizing healthcare services  \parencite{davidson_framework_2004} empirical evidence indicates that the reduction in the price, or the removal of financial barriers, may not consistently translate to higher demand for preventive care. The RAND Health Insurance Experiment, for instance, suggests that preventive care and pharmacy benefits exhibit higher price sensitivity with an elasticity of -0.43 meaning that a reduction in price could potentially improve the preventive services use compared to other health services \parencite{ringel_elasticity_2002}. In contrast, \textcite{ellis_health_2017} contradicts this finding by indicating that the demand elasticity for preventive care is remarkably low, close to -0.02, even lower than that for Emergency room services (-0.04), making it one of the least price-sensitive healthcare services.
+
+In this study I aims to bridge the theoretical underpinnings with empirical finding  building upon the work of \parencite{li_gains_2021}, which explored preventive care utilization among foreign-born individuals as a consequence of the ACA's general insurance gain, using the Medical Expenditure Panel Survey (MEPS) for the years 2010–2016, I seek to extend our understanding of the relationship between Medicaid policies (Medicaid expansion and cost-sharing removal for preventive care) and the utilization of preventive care services, with a specific focus on breast and colorectal cancer screening among all other preventive services. 
+These screenings are chosen for their significance in early disease detection, better treatment outcomes, and cost savings \parencite{xu_impact_2020}. Additionally, as these screenings typically involve higher costs compared to services like blood pressure or cholesterol screening, the impact of the Affordable Care Act (ACA) in terms of reducing these costs is notably more pronounced \parencite{gordon_spending_2022}.
+ 
+ 
+ This study will reveal if the obtained potential access was translated into realized access and check if foreign-born individuals did indeed use the services. By addressing these questions, we aim to provide evidence-based insights to inform healthcare policy decisions, reduce disparities in preventive care access, and enhance the health and well-being of immigrants in the United States.
+
+\section{Theoretical Frameworks}
+
+The theoretical framework of this study is designed to provide a comprehensive understanding of the relationship between Medicaid policies, preventive care utilization, disparities, and their impact on foreign-born populations. This framework draws upon multiple theoretical perspectives, including the Health Policy Analysis Framework, Health Disparities Framework, Social Determinants of Health Framework, and the Behavioral Model of Health Services Use.
+
+\begin{enumerate}
+
+\item Health Care Access Framework with the Behavioral Model of Health Services Use: Within the Health Care Access Framework, I integrate the Behavioral Model of Health Services Use, as revised by \textcite{andersen_revisiting_1995}, This model considers both community-level characteristics (e.g., neighborhood environment and healthcare market structure) and individual-level attributes influencing access to healthcare services.The Behavioral Model includes three key outcome measures:
+
+\subitem Potential Access: Enabling resources, like insurance coverage, that increase the likelihood of healthcare service use.
+\subitem Realized Access: Actual utilization of healthcare services.
+\subitem Access Outcome: The degree to which effective and efficient access to healthcare services is achieved.
+
+The integration of these theoretical frameworks allows me to comprehensively investigate the relationship between Medicaid policies, preventive care utilization, disparities, and their impact on foreign-born populations. While this study primarily employs quantitative methods, the selected frameworks provide a structured foundation for analyzing quantitative data and drawing meaningful conclusions about the factors influencing preventive care utilization and disparities within this diverse group.
+
+\end{enumerate}
+
+
+\section{Data and Method}
+
+\paragraph{Study Design:} This research will employ a quasi-experimental design to assess the impact of Medicaid expansion on preventive service utilization among two distinct population groups: foreign-born and U.S.-native individuals.
+
+\paragraph{Data Source:} 
+
+The primary data will be obtained from the Medical Expenditure Panel Survey Household Component (MEPS-HC), which represents the non-institutionalized US population on a national scale. Each year MEPS-HC selects a new panel of sample households from individuals who participated in the National Health Interview Survey(NHIS) conducted by the National Center for Health Statistics in the previous year.  and conducts interviews with each household for two successive calendar years, involving five rounds of data collection. Using an overlapping panel approach, data from two panels cover each calendar year. This extensive survey gathers information on a broad array of topics, including demographic characteristics, socioeconomic status, health insurance coverage, access to healthcare, health status,  health conditions, healthcare utilization, and health-related expenditures\parencite{ahrq_medical_2024}.
+The medical conditions related to each visit were classified by expert coders using the exact text provided by each participant. AHRQ has conducted verification of the codes, confirming that their error rate is below 2.5\% \parencite{wang_fewer_2018}. Once the Household interviews were concluded, respondent medical providers were contacted by telephone in order to get supplementary information regarding medical visit summaries, diagnostic codes, and billing. This Second telephone survey create the Medical Component (MEPS-MC) the access to this component is restricted to use on AHRQ Data Center or FSRDCs \parencite{ahrq_medical_2024}. For this study I compile nine years of cross-sectional data from the household component, covering the period from 2011 to 2019, which includes time frames both before and after the Medicaid expansion. While all data in MEPS-HC are publicly available, the state identifier is an exception. This variable is crucial for constructing the expansion status, that indicates whether a respondent lived in a state that expanded its Medicaid program, and for specifying state fixed effects in the regression models. Access to these identifier variables will be facilitated through an application to AHRQ to utilize the MEPS-AWS Secure Cloud.
+
+MEPS was chosen as the ideal dataset due to its comprehensive array of relevant variables that closely align with the study objectives. and its widespread utilization in examining the effects of the Affordable Care Act (ACA)
+
+ 
+\paragraph{Variables:} 
+
+The key variables of interest include:
+
+\begin{itemize}
+\item Dependent Variable: Preventive service utilization (Colorectal and breast cancer screening).
+
+\item Treatment Variable: Medicaid expansion status (pre-expansion vs. post-expansion).
+
+\item Interaction Term: Foreign-born status
+
+\end{itemize}
+
+\paragraph{Data Analysis:} 
+The use of canonical difference-in-differences models for evaluating policy impacts is a well-established practice in empirical research that involves comparing changes in outcomes in a treatment group before and after policy enactment with changes in outcomes in a control group over the same time period. In scenarios involving multiple time periods, various groups, or variations in treatment timing, researchers frequently turn to the Two-Way Fixed Effects (TWFE) regression specification. However, recent advancements in the difference-in-differences (DID) literature have raised concerns surrounding potential biases in TWFE and TWFE event studies due to treatment heterogeneity \parencite{goodman-bacon_difference--differences_2021,roth_whats_2023,sun_estimating_2021,imbens_potential_2020} To address these concerns and rule out potential bias in my first paper, I employed the Goodman-Bacon decomposition for the DID TWFE approach and the \textcite{sun_estimating_2021} to the event study specification, providing a critical examination of my methodology.
+
+In this paper, similar to Paper 1, I will first implement both DiD TWFE and DiD event study; however, acknowledging the limitations of traditional models and the need for a more flexible approach, I will additionally use another method proposed by \textcite{callaway_difference--differences_2021}. Callaway and Sant'Anna (CS) offer a new perspective on treatment period complexities. Instead of treating all treatment periods equally, this method analyzes each separately and estimates "group-time treatment effects", representing the average treatment effect on groups treated during specific time periods. To enhance the precision of these estimates, propensity score matching is employed to compare treated groups with similar untreated groups for each period. The CS method offers versatility and an array of analytical choices, allowing researchers to either average these estimates to calculate a weighted average treatment effect on the treated or conduct comparisons between earlier-treated and later-treated groups to estimate dynamic treatment effects.
+
+Moreover, to disentangle the impact of preventive care utilization (specifically, cancer screening) from the broader effects of Medicaid expansion, I can also utilize the Regression Discontinuity (RD) design. This design will involve an age cutoff of 64, as individuals aged 65 and older become eligible for Medicare. This age threshold allows me to isolate the effect of Medicaid expansion on cancer screening utilization, as this age group will not benefit from increased insurance coverage, but the removal of cost-sharing may affect their cancer screening behavior.
+
+\paragraph{Data Availability and Access:} Access to the MEPS dataset will be sought through appropriate channels, and any required permissions will be obtained.
+
+\paragraph{Statistical Software:} Data analysis will be conducted using R.
+
+\newpage
+
+\printbibliography
+
+%\bibliography{references.bib} 
+
+
+
+\end{document}
+
+
 
 \section{Introduction}
     \subfile{sections/1-introduction}

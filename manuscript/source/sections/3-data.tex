@@ -19,9 +19,24 @@ as is the case with the MEPS data. Given that context, an exploratory analysis w
 
 \section{Dependent Variables}
 
- The key outcome variable are Preventive service utilization (Colorectal and breast cancer screening)
+The outcome of interest is recipient of the following preventive screenings recommended by USPSTF
 
-\section{Key Independen Variables}
+Mammograms in the past two years
+Sigmoidoscopy in the past five years
+Colonoscopy in the past ten years
+
+After 2018, the exact variables for these screenings are readily available due to changes in the survey's preventive questioning. However, for years prior to 2018, I construct these three variables for eligible respondents. Eligibility criteria include being within the recommended age for screening and having no prior diagnosis of breast or colorectal cancer. This construction relies on respondents' answers to questions regarding their most recent sigmoidoscopy, colonoscopy, or mammogram.
+
+
+
+\footnote{Before 2018, each panel was surveyed twice regarding preventive screening: once in the first year of the interview (Round 3) and again in the second year (Round 5). However, beginning in 2018, the Agency for Healthcare Research and Quality (AHQR) changed their approach to preventive questioning. They altered the format of questions; for instance, the query regarding colorectal cancer screening changed from "When was your last sigmoidoscopy?" to "Have you had a sigmoidoscopy in the last 5 years?" Additionally, they decided to ask this question only once per panel, either in Round 4 or Round 2. Consequently, preventive screening questions are now visible in alternating years.
+
+As previously mentioned, data from two panels are collected for each calendar year. For example, in 2017, data is gathered from panels 21 and 22, while in 2018, it's from panels 22 and 23. This means that individuals in Panel 22 are present in both 2017 and 2018. since the same individual may contribute to years without preventive care data, I've created a variable based on their responses from another year. For instance, although there's no data on preventive screening in 2017, we know that Panel 21 and Panel 22 contributed to this year's data, and individuals in Panel 22 were queried about their preventive screenings in 2018, while those in Panel 21 were asked in 2016. Therefore, I've constructed a cancer screening variable for 2017 using responses from Panel 22 in 2018 and individuals from Panel 21 included in the 2016 dataset. The three variables I'm reconstructing are: having had a sigmoidoscopy in the last 5 years, having had a colonoscopy in the last 10 years, and having had a mammogram in the last two years.
+
+It's important to note that by doing this, I might be underestimating the number of people in Panel 21 who may have undergone preventive screening in the following year. I will be employing a similar construction for 2019 as well.}
+
+
+\section{Key Independent Variables}
 
 
  control for various predisposing and enabling factors known to impact the utilization of preventive services (Andersen, 1995). Consistent with prior research (Jensen et al., 2015), I include

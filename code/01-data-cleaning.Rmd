@@ -6,19 +6,53 @@ output: html_notebook
 
 This is first attempt for data cleaning for paper 2
 
+```{r}
+
+ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53
 
 
+ADRISK42 – More likely to take risks than the average person
+
+ADOVER42 – Can overcome illness without help from a medically trained person
+
+HAVEUS42- Have usual source of care 
+
+RTHLTH42- PERCEIVED HEALTH STATUS
+
+ADSMOK42- Currently smoke
+
+PHYEXE53- physical activity at least five times a week Age>17; 
+
+```
+
+
+```{r, eval=FALSE}
+# Install the required packages
+
+install.packages("MEPS")
+install.packages("survey")
+install.packages("tidyverse")
+install.packages("haven")
+install.packages("labelled")
+install.packages("broom")
+install.packages("foreign")  
+install.packages("devtools")
+devtools::install_github("e-mitchell/meps_r_pkg/MEPS")
+
+```
 
 ## Loading required libraries
 
 ```{r}
-
-library(MEPS)     
+library(foreign)
+library(devtools)
 library(survey)
 library(tidyverse)
 library(haven)
 library(labelled)
 library(broom)
+library(MEPS)     
+
 ```
 
 ```{r}
@@ -99,7 +133,10 @@ fyc19 <- fyc2019 %>% select(
                 AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
                 BORNUSA, YRSINUS, OTHLGSPK,  HWELLSPK, WHTLGSPK, ADLANG42, # Immigration
                 INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
-                CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER # cancer diagnoses
+                CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+                ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
+                
      )
 
 fyc19$YEAR<-2019
@@ -190,7 +227,11 @@ fyc18  <- fyc2018 %>% select(
     ADCLNS42, ADSGMD42, # Colorectal Cancer   ADCOLN42,
     ADMMGR42, # Breast Cancer  ADBRST42,
    # PSA53 # Prostate Cancer ADPROS42,
+    ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
+
+
 
 fyc18$YEAR<-2018
 
@@ -240,7 +281,9 @@ fyc17  <- fyc2017 %>% select(
     AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
     BORNUSA, YRSINUS,  OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
-    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER # cancer diagnoses
+    CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 fyc17$YEAR<-2017
 
@@ -317,8 +360,10 @@ fyc16  <- fyc2016 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # Cancer diagnoses
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
-    MAMOGR53 # , # Breast Cancer
+    MAMOGR53, # , # Breast Cancer
    # PSA53 # Prostate Cancer:
+       ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 fyc16$YEAR<-2016
 
@@ -396,8 +441,10 @@ fyc15  <- fyc2015 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
-    MAMOGR53 # , # Breast Cancer
+    MAMOGR53, # , # Breast Cancer
    # PSA53 # Prostate Cancer:
+       ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 
 fyc15$YEAR<-2015
@@ -478,8 +525,10 @@ fyc14  <- fyc2014 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
-    MAMOGR53 # , # Breast Cancer
+    MAMOGR53  , # Breast Cancer
    # PSA53 # Prostate Cancer:
+       ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 fyc14$YEAR<-2014
 
@@ -559,8 +608,10 @@ fyc13  <- fyc2013 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
      # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
-    MAMOGR53 # , # Breast Cancer
-   # PSA53 # Prostate Cancer:
+    MAMOGR53  , # Breast Cancer
+   # PSA53 # Prostate Cancer
+      ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 fyc13$YEAR<-2013
 
@@ -662,8 +713,10 @@ fyc12  <- fyc2012 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
-    MAMOGR53 # , # Breast Cancer
+    MAMOGR53  , # Breast Cancer
    # PSA53 # Prostate Cancer:
+    ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 
 fyc12$YEAR<-2012
@@ -774,8 +827,10 @@ fyc11  <- fyc2011 %>% select(
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
-    MAMOGR53 # , # Breast Cancer
+    MAMOGR53  , # Breast Cancer
    # PSA53 # Prostate Cancer:
+   ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+
 )
 fyc11$YEAR<-2011
          
@@ -879,7 +934,7 @@ table(fyc11$PANEL,fyc11$YEAR)
 ```
 
 
-# Merge 2011 to 2016 in one data set
+# Merge 2011 to 2019 in one data set
 ```{r}
 
 
@@ -894,4 +949,41 @@ save(data, file =paste0(wd$data,"RAWMEPS.RData"))
 
 
 
+## Creating fake state variable:
 
+```{r}
+
+# Load necessary library
+set.seed(123)  # Setting seed for reproducibility
+
+
+# Define the regions and corresponding states with FIPS codes
+region_to_states <- list(
+  "1" = c("09", "23", "25", "33", "34", "36", "42", "44", "50"),
+  "2" = c("18", "17", "19", "20", "26", "27", "29", "31", "38", "55"),
+  "3" = c("01", "05", "10", "11", "12", "13", "21", "22", "24", "37", "45", "47", "51", "54", "48", "51", "54"),
+  "4" = c("02", "04", "06", "08", "15", "16", "30", "32", "35", "49", "56")
+)
+
+# Function to randomly assign a state based on region
+random_state <- function(region) {
+  states <- region_to_states[[region]]
+  if (is.null(states)) return(NA)
+  sample(states, 1)
+}
+
+# note I need to drop inapplicable before using this variable
+# 
+data<-fyc2011[fyc2011$REGION != -1,] 
+# Apply the function to create the state variable
+data$state <- sapply(data$REGION, random_state)
+
+# Print the updated data frame
+print(data)
+
+
+```
+
+
+
+I need to import state unemployment rate and state structural xenphobia

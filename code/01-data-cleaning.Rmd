@@ -23,6 +23,9 @@ ADSMOK42- Currently smoke
 
 PHYEXE53- physical activity at least five times a week Age>17; 
 
+HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX
+
+
 ```
 
 
@@ -51,7 +54,9 @@ library(tidyverse)
 library(haven)
 library(labelled)
 library(broom)
-library(MEPS)     
+library(MEPS)  
+library(readxl) # reading 
+
 
 ```
 
@@ -131,9 +136,10 @@ Now, I move to subset variable I need, for each year and clean them before I can
 fyc19 <- fyc2019 %>% select(
                 DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
                 AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
-                BORNUSA, YRSINUS, OTHLGSPK,  HWELLSPK, WHTLGSPK, ADLANG42, # Immigration
+                BORNUSA, YRSINUS,  HWELLSPK, # Immigration
                 INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
                 CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+                HIBPDX,DIABDX_M18,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
                 ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
 
                 
@@ -143,7 +149,18 @@ fyc19$YEAR<-2019
 
 ```
 
-Cancer screening fixed
+## rename diabet variable, 
+for 2018 and 2019 starting that year they aask all the ages not just 18 and older
+
+```{r}
+
+fyc19<-fyc19 %>%
+  rename(DIABDX=DIABDX_M18)
+
+```
+
+
+## Cancer screening fixed
 
 ```{r}
 # first fixing 2020 cancer
@@ -174,7 +191,6 @@ replacement <- fyc2020$MAMOGR53[matching_indices[!is.na(matching_indices)]]
 fyc19$MAMOGR53 <- replace(fyc19$MAMOGR53, !is.na(matching_indices)&fyc19$PANEL==24, replacement)
 
 
-
 matching_indices <- match(fyc19$DUPERSID, fyc18$DUPERSID)
 fyc19$CLNTST53[!is.na(matching_indices)]<- fyc18$CLNTST53[matching_indices[!is.na(matching_indices)]]
 fyc19$SGMTST53[!is.na(matching_indices)] <- fyc18$SGMTST53[matching_indices[!is.na(matching_indices)]]
@@ -184,19 +200,13 @@ fyc19$MAMOGR53[!is.na(matching_indices)] <- fyc18$MAMOGR53[matching_indices[!is.
 table(fyc2020$PANEL, fyc2020$MAMOGR53)
 table(fyc18$PANEL)
 table(fyc2020$PANEL)
-
-table(fyc18$PANEL, fyc18$MAMOGR53)
-table(fyc19$PANEL, fyc19$SGMTST53)
-table(fyc19$PANEL, fyc19$CLNTST53)
-
+table(fyc19$CLNTST53)
 
 
 ```
 
+##fixing education:
 
-
-
-fixing education:
 
 ```{r}
 # 1: No Dgree
@@ -212,6 +222,18 @@ fyc19<-rename(fyc19, EDUC=HIDEG)
 
 ```
 
+## language
+change it to binary that answer if the person is not comfortable speaking English
+
+```{r}
+
+fyc19$ENG<- replace(fyc19$HWELLSPK,fyc19$HWELLSPK %in% c(1,2), 2 ) # No, comfortable speaking english
+fyc19$ENG<- replace(fyc19$ENG,fyc19$ENG %in% c(3,4), 1 ) # Yes, notcomfortable speaking english
+
+ fyc19 <- fyc19 %>% select(-HWELLSPK)
+
+```
+
  
 #2018
 
@@ -220,14 +242,17 @@ fyc19<-rename(fyc19, EDUC=HIDEG)
 fyc18  <- fyc2018 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY , REGION,HIDEG, # Demographic
-    BORNUSA, YRSINUS, OTHLGSPK,  HWELLSPK, WHTLGSPK, ADLANG42, # Immigration
+    BORNUSA, YRSINUS,  HWELLSPK,HWELLSPE, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
    #  ADPAP42,ADPAPG42, #Cervical Cancer
     ADCLNS42, ADSGMD42, # Colorectal Cancer   ADCOLN42,
     ADMMGR42, # Breast Cancer  ADBRST42,
    # PSA53 # Prostate Cancer ADPROS42,
-    ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
+    HIBPDX,DIABDX_M18,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
+
+   # ADRISK42,  ADOVER42, ADSMOK42
+   HAVEUS42, RTHLTH42,PHYEXE53 # health and health behavior 
 
 )
 
@@ -236,7 +261,46 @@ fyc18  <- fyc2018 %>% select(
 fyc18$YEAR<-2018
 
 ```
-cleaning cancer,Cancer screening be droping the ADBLDS42 (Blood Stool) and cervical cancer screening
+
+
+## rename diabet variable, 
+for 2018 and 2019 starting that year they aask all the ages not just 18 and older
+
+```{r}
+
+fyc18<-fyc18 %>%
+  rename(DIABDX=DIABDX_M18)
+
+```
+
+#impute ADRISK42 and ADOVER42, ADSMOK42 brininging info from 2019 and 2017 
+```{r}
+
+
+for (var in c("ADRISK42", "ADOVER42", "ADSMOK42")) {
+  
+    fyc18[[var]] <- 9999
+
+ 
+    
+matching_indices<- match(fyc18$DUPERSID, fyc19$DUPERSID)
+replacement <- fyc19[[var]][matching_indices[!is.na(matching_indices)]]
+fyc18[[var]] <- replace(fyc18[[var]], !is.na(matching_indices)&fyc18$PANEL==23, replacement)
+
+
+matching_indices <- match(fyc18$DUPERSID, paste0(as.character(fyc2017$PANEL), fyc2017$DUPERSID))
+  replacement <- fyc2017[[var]][matching_indices[!is.na(matching_indices)]]
+  fyc18[[var]] <- replace(fyc18[[var]], !is.na(matching_indices) & fyc18$PANEL == 22, replacement)
+       
+}
+
+
+
+```
+
+
+## cleaning cancer,
+Cancer screening be droping the ADBLDS42 (Blood Stool) and cervical cancer screening
 renaming  variables
 
 ```{r}
@@ -257,7 +321,7 @@ fyc18$MAMOGR53<-replace(fyc18$MAMOGR53, fyc18$MAMOGR53 %in% c(2,3),0) # 0 : No c
 
 
 
-cleaning education:
+## cleaning education:
 ```{r}
 # 1: No Dgree
 
@@ -271,6 +335,27 @@ fyc18<-rename(fyc18, EDUC=HIDEG)
 
 ```
 
+## language
+
+this year again has different questionnaire for panels
+change it to binary that answer if the person is not comfortable speaking English
+
+```{r}
+
+fyc18$ENG<- ifelse(fyc18$PANEL== 22, fyc18$HWELLSPE,fyc18$HWELLSPK)
+
+fyc18$ENG<- replace(fyc18$ENG,fyc18$ENG %in% c(1,2), 2 ) # No, comfortable speaking English
+fyc18$ENG<- replace(fyc18$ENG,fyc18$ENG %in% c(3,4), 1 ) # Yes, Not comfortable speaking English
+
+
+ table(fyc18$PANEL,fyc18$ENG)
+ 
+ fyc18 <- fyc18 %>% select(-HWELLSPE, -HWELLSPK )
+
+ 
+ 
+```
+
 
 #2017
 
@@ -279,9 +364,11 @@ fyc18<-rename(fyc18, EDUC=HIDEG)
 fyc17  <- fyc2017 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
-    BORNUSA, YRSINUS,  OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    BORNUSA, YRSINUS, HWELLSPE, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
+
     ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53 # health and health behavior 
 
 )
@@ -291,7 +378,7 @@ fyc17$YEAR<-2017
 ```
 
 
-cleaning cancer:
+## cleaning cancer:
 ```{r}
 
 fyc17$b <- paste0(as.character(fyc17$PANEL),fyc17$DUPERSID) # there is slight difference between 2017 and 2018 naming this code is fixing that
@@ -322,7 +409,7 @@ fyc17 <- subset(fyc17, select = -b)
 
 ```
 
-cleaning education:
+## cleaning education:
 
 ```{r}
 # 1: No Dgree
@@ -346,6 +433,18 @@ fyc17<-rename(fyc17, EDUC=HIDEG)
 
 ```
 
+## language
+change it to binary that answer if the person is not comfortable speaking English
+```{r}
+ # 
+
+fyc17$ENG<- replace(fyc17$HWELLSPE,fyc17$HWELLSPE %in% c(1,2), 2 ) # No, comfortable speaking english
+fyc17$ENG<- replace(fyc17$ENG,fyc17$ENG %in% c(3,4), 1 ) # Yes, not comfortable
+
+fyc17 <-fyc17  %>%  select(-HWELLSPE)
+
+
+```
 
 
 #2016
@@ -355,9 +454,11 @@ fyc17<-rename(fyc17, EDUC=HIDEG)
 fyc16  <- fyc2016 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,HIDEG, # Demographic
-    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    BORNUSA, YRSINUS, HWELLSPE, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # Cancer diagnoses
+   HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
+
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
     MAMOGR53, # , # Breast Cancer
@@ -370,7 +471,7 @@ fyc16$YEAR<-2016
 
 ```
 
-
+## Cancer
 I decided to only look at colonscopy and semidoscopy and not the  BLD STOOL TST
 thus I drop the BSTST53, BSTSRE53, also will not look at the cervical and prostate 
 ```{r}
@@ -400,7 +501,7 @@ fyc16$MAMOGR53<-replace(fyc16$MAMOGR53, fyc16$MAMOGR53 %in% 3:6 , 0) # NO
 ```
 
 
-
+## Education
 I need to make education consistent for all years
 ```{r}
 # 1: No Dgree
@@ -424,7 +525,19 @@ fyc16<-rename(fyc16, EDUC=HIDEG)
 
 ```
 
-Now creating a cancer screening variables:
+##language
+
+change it to binary that answer if the person is not comfortable speaking English
+
+```{r}
+
+
+fyc16$ENG<- replace(fyc16$HWELLSPE,fyc16$HWELLSPE %in% c(1,2), 2 ) # comfortable speaking english
+fyc16$ENG<- replace(fyc16$ENG,fyc16$ENG %in% c(3,4), 1 ) # not comfortable
+
+fyc16 <-fyc16  %>%  select(-HWELLSPE)
+
+```
 
 
 
@@ -436,9 +549,11 @@ fyc15  <- fyc2015 %>% select(
     
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX,MARRYX, FAMS1231, EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
-    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    BORNUSA, YRSINUS, HWELLSPE, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
+
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
     MAMOGR53, # , # Breast Cancer
@@ -451,7 +566,7 @@ fyc15$YEAR<-2015
 
 ```
 
-Cancer recoding
+## Cancer recoding
 ```{r}
 
 #Colonscopy
@@ -482,7 +597,7 @@ fyc15$MAMOGR53<-replace(fyc15$MAMOGR53, fyc15$MAMOGR53 %in% 3:6 , 0) # NO
 
 ```
 
-
+## Education 
 for education half of the panel is following the year before thus need to be fixed
 ```{r}
 
@@ -506,7 +621,18 @@ table(fyc15$EDUC)
 
 ```
 
+## Language
 
+change it to binary that answer if the person is not comfortable speaking English
+
+```{r}
+
+fyc15$ENG<- replace(fyc15$HWELLSPE,fyc15$HWELLSPE %in% c(1,2), 2 ) # comfortable speaking english
+fyc15$ENG<- replace(fyc15$ENG,fyc15$ENG %in% c(3,4), 1 ) # not comfortable
+
+fyc15 <-fyc15  %>%  select(-HWELLSPE)
+
+```
 
  
 #2014
@@ -520,9 +646,10 @@ https://meps.ahrq.gov/data_stats/download_data/pufs/h155/h155doc.shtml#2582Famil
 fyc14  <- fyc2014 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION, EDRECODE , # Demographic
-    BORNUSA, YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    BORNUSA, YRSINUS, HWELLSPE, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
     MAMOGR53  , # Breast Cancer
@@ -536,7 +663,7 @@ fyc14$YEAR<-2014
 ```
 
 
-Cancer recoding
+## Cancer recoding
 ```{r}
 
 #Colonscopy
@@ -569,7 +696,7 @@ fyc14$MAMOGR53<-replace(fyc14$MAMOGR53, fyc14$MAMOGR53 %in% 3:6 , 0) # NO
 
 
 
-education
+## education
 ```{r}
 
 
@@ -592,6 +719,18 @@ table(fyc14$EDUC)
 
 ```
 
+## Language
+
+change it to binary that answer if the person is not comfortable speaking English
+
+```{r}
+
+fyc14$ENG<- replace(fyc14$HWELLSPE,fyc14$HWELLSPE %in% c(1,2), 2 ) # comfortable speaking english
+fyc14$ENG<- replace(fyc14$ENG,fyc14$ENG %in% c(3,4), 1) # not comfortable
+
+fyc14 <-fyc14  %>%  select(-HWELLSPE)
+
+```
 
 #2013
  
@@ -603,9 +742,11 @@ table(fyc14$EDUC)
 fyc13  <- fyc2013 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION, EDRECODE, # Demographic
-    BORNUSA,USBORN42, LIVEUS42,YRSINUS, OTHLANG,LANGSPK, HWELLSPE, ADLANG42, # Immigration
+    BORNUSA,USBORN42, LIVEUS42,YRSINUS,ENGSPK42 , HWELLSPE, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
+
      # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
     MAMOGR53  , # Breast Cancer
@@ -620,7 +761,7 @@ fyc13$YEAR<-2013
 ```
 
 
-Cancer recoding
+## Cancer recoding
 ```{r}
 
 #Colonscopy
@@ -654,7 +795,7 @@ fyc13$MAMOGR53<-replace(fyc13$MAMOGR53, fyc13$MAMOGR53 %in% 3:6 , 0) # NO
 
 
 
-fixing the education 
+## education 
 
 ```{r}
 
@@ -676,6 +817,7 @@ fyc13<-rename(fyc13, EDUC=EDRECODE)
 
 ```
 
+## US-born
 due to previous year change in US born some changes need to be done with this dataset:
 
 ```{r}
@@ -694,6 +836,22 @@ due to previous year change in US born some changes need to be done with this da
 
 ```
 
+## language
+
+change in questionare this year half dataset half different question make them the same
+
+```{r}
+
+fyc13$HWELLSPE<- replace(fyc13$HWELLSPE,fyc13$HWELLSPE %in% c(1,2), 2 ) # comfortable speaking english
+fyc13$HWELLSPE<- replace(fyc13$HWELLSPE,fyc13$HWELLSPE %in% c(3,4), 1) # not comfortable
+
+fyc13$ENG<- ifelse(fyc13$PANEL== 18, fyc13$HWELLSPE,fyc13$ENGSPK42)
+
+fyc13 <-fyc13  %>%  select(-HWELLSPE, -ENGSPK42)
+
+
+
+```
 
 
 #2012
@@ -708,9 +866,10 @@ Name change in US born and years lived in US. I didn't rename it yet because the
 fyc12  <- fyc2012 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACETHX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
-    USBORN42, USLIVE42, ENGCMF42,ENGSPK42, LANGHM42, ADLANG42, # Immigration
+    USBORN42, USLIVE42,ENGSPK42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
     MAMOGR53  , # Breast Cancer
@@ -729,6 +888,8 @@ fyc12$YEAR<-2012
 
 ```
 
+
+##rename variables language, US-born
 Further investigation showed that years in us was not only different name but it was also continuous while for after 2013 it was categorical data 
 so I changed it as follow:
 
@@ -739,7 +900,8 @@ First, renamed the USBORN42 and  USLIVE42 to make it consistent with the rest
             rename(
                 BORNUSA  = USBORN42,
                 YRSINUS= USLIVE42 ,
-                EDUC=EDRECODE
+                EDUC=EDRECODE ,
+                ENG=ENGSPK42
                 ) 
 ```
 
@@ -757,7 +919,7 @@ then make YRSINUS categorical like other years
 ```
 
 
-Cancer recoding
+## Cancer recoding
 ```{r}
 
 #Colonscopy
@@ -789,9 +951,7 @@ fyc12$MAMOGR53<-replace(fyc12$MAMOGR53, fyc12$MAMOGR53 %in% 3:6 , 0) # NO
 ```
 
 
-
-
-fix the education
+## education
 ```{r}
 
 fyc12$EDUC<-replace(fyc12$EDUC, fyc12$EDUC %in% 0:12, 1)
@@ -822,9 +982,10 @@ In addition to the US-Born and everything there is a difference with RACE variab
 fyc11  <- fyc2011 %>% select(
     DUPERSID,DUID,PANEL, PID,PSTATS31 , PSTATS42 , PSTATS53 , PERWT, VARSTR, VARPSU,SPOUID31, # IDS and weights
     AGE, SEX, RACEX,HISPANX, MARRYX, FAMS1231,  EMPST31, POVCAT,POVLEV, DOBYY ,REGION,EDRECODE, # Demographic
-    USBORN42, USLIVE42, ENGCMF42,ENGSPK42, LANGHM42, ADLANG42, # Immigration
+    USBORN42, USLIVE42,ENGSPK42, # Immigration
     INSURC,MCDEV, MCREV, PRVEV, UNINS,INSCOV, PRIV ,#Insurance
     CABREAST, CACERVIX, CACOLON, CAPROSTA, CANCERDX, CAOTHER, # cancer diagnoses
+    HIBPDX,DIABDX,ASTHDX,CHDDX, ARTHDX,CANCERDX, # comorbidities
     # HYSTER53, PAPSMR53, #Cervical Cancer
     CLNTST53,SGMTST53,  # Colorectal Cancer droped  CLNTRE53 SGMTRE53
     MAMOGR53  , # Breast Cancer
@@ -838,16 +999,17 @@ fyc11$YEAR<-2011
 
 ```
 
- start with the US borns: 
+##rename variables language, US-born
 
-Same as 2012 first rename the USBORN42 and  USLIVE42 to make it consistent with the rest
+Same as 2012 first rename the USBORN42 and  USLIVE42 , language to make it consistent with the rest
 ```{r}
   fyc11<- fyc11 %>%
                 rename(
-                    BORNUSA= USBORN42,
-                    YRSINUS= USLIVE42,
-                    RACETHX=RACEX,
-                    EDUC=EDRECODE) 
+                    BORNUSA = USBORN42,
+                    YRSINUS = USLIVE42,
+                    ENG = ENGSPK42,
+                    RACETHX = RACEX,
+                    EDUC = EDRECODE) 
 ```
 
 then make the USlive categorical 
@@ -865,7 +1027,7 @@ then make the USlive categorical
 Now move on to the race variable, let's merge ethnicity into the race
 
 
-Cancer recoding
+## Cancer recoding
 ```{r}
 
 #Colonscopy
@@ -934,15 +1096,19 @@ table(fyc11$PANEL,fyc11$YEAR)
 ```
 
 
+
 # Merge 2011 to 2019 in one data set
 ```{r}
 
-
-
+Binded<-data
+#data<-Binded
 data = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc17,fyc18,fyc19) %>%
   mutate(poolwt = PERWT / 9)
 
-save(data, file =paste0(wd$data,"RAWMEPS.RData"))
+# raw<-bind_rows(fyc2011,fyc2012,fyc2013,fyc2014,fyc2015,fyc2016,fyc2017,fyc2018,fyc2019) %>%
+  #mutate(poolwt = PERWT / 9)
+  #data<-Binded
+
 
 ```
 
@@ -960,9 +1126,9 @@ set.seed(123)  # Setting seed for reproducibility
 # Define the regions and corresponding states with FIPS codes
 region_to_states <- list(
   "1" = c("09", "23", "25", "33", "34", "36", "42", "44", "50"),
-  "2" = c("18", "17", "19", "20", "26", "27", "29", "31", "38", "55"),
-  "3" = c("01", "05", "10", "11", "12", "13", "21", "22", "24", "37", "45", "47", "51", "54", "48", "51", "54"),
-  "4" = c("02", "04", "06", "08", "15", "16", "30", "32", "35", "49", "56")
+  "2" = c("18", "17", "19", "20", "26", "27", "29", "31", "38","39","46", "55"),
+  "3" = c("01", "05", "10", "11", "12", "13", "21", "22", "24","28", "37", "40", "45", "47", "51", "54", "48", "51", "54"),
+  "4" = c("02", "04", "06", "08", "15", "16", "30", "32", "35","41", "49","53" ,"56")
 )
 
 # Function to randomly assign a state based on region
@@ -974,16 +1140,176 @@ random_state <- function(region) {
 
 # note I need to drop inapplicable before using this variable
 # 
-data<-fyc2011[fyc2011$REGION != -1,] 
+data<-data[data$REGION != -1,] 
 # Apply the function to create the state variable
 data$state <- sapply(data$REGION, random_state)
 
 # Print the updated data frame
-print(data)
+
+data$state<-as.numeric(data$state)
+```
+
+
+## Create an expansion variable
+this is the code I need to give them and get the data set 
+
+```{r}
+data$Adopted<- ifelse (data$state %in% c(1,12,13,16, 20,23,28,29,31,37,40,45,46,47,48,49,51,55,56), 0, 1)
+
+data$ExpansionY <- ifelse (data$state %in% c(4,5,6,8,9,10,11, 15,17,19, 21,24,
+                                             25,26,27,32,34,35,36,38,39,41,44,50,53,54), 2014, 0)  # codes the state that didn't adopt medicaid 
+data$ExpansionY <- ifelse (data$state %in% c(18,33,42), 2015,data$ExpansionY) # codes the state that didn't adopt medicaid 
+data$ExpansionY <- ifelse (data$state %in% c(2,22,30), 2016, data$ExpansionY) # codes the state that didn't adopt medicaid 
+
+ b<-ifelse (data$state %in% c(18,33,42), 2015,0)
+table(b)
+table(data$ExpansionY)
+table(data$Adopted)
+
+table(data$state, data$Adopted)
+table(data$ExpansionY)
+
+#data$treat <- ifelse(data$YEAR>=data$ExpansionY & !data$ExpansionY==0 ,1,0)
+
+data$treat <- ifelse(data$YEAR>=data$ExpansionY & !data$ExpansionY==0 ,1,
+                     ifelse(data$ExpansionY==0,999,0))
+
+table(data$treat)
 
 
 ```
 
 
 
-I need to import state unemployment rate and state structural xenphobia
+## import state unemployment rate 
+```{r}
+
+UNEMPR <- read_excel(paste0(wd$data,"UnempR.xlsx"), sheet = "Sheet1")
+sapply(UNEMPR, class)
+
+# Drop the columns I don't want, Statae name and State ABR are not included in the original Dataset, 
+# I might need to drop them or just keep the ABR for the final dataset
+
+UNEMPR <- UNEMPR %>% select(-c(`STATE ABR` , `2020`, `2021`))
+
+# Use pivot_longer to reshape the data
+unemp_data_long <- pivot_longer(UNEMPR, 
+                                cols = c(`2009`,`2010`, `2011`, `2012`, `2013`, `2014`, `2015`, `2016`, `2017`, `2018`, `2019`), 
+                                names_to = "YEAR", 
+                                values_to = "UnempR")
+
+# Print the transformed data check if everything is correct
+print(unemp_data_long)
+UNEMPR<-unemp_data_long 
+rm(unemp_data_long)
+
+colnames(UNEMPR) <- c("StateN","state", "YEAR", "UnempR")
+ #cheking the values again, year is charachter and need to be converted to numeric
+sapply(UNEMPR, class)
+UNEMPR$YEAR<- as.numeric(UNEMPR$YEAR)
+table(UNEMPR$YEAR)
+
+data <- merge(data, UNEMPR, by = c( "state", "YEAR" ), all.x = TRUE)
+
+table(data$UnempR)
+
+
+```
+
+
+## state structural xenphobia
+
+```{r}
+
+
+IPC <- read.csv(paste0(wd$data,"IPC.csv"), header = TRUE, sep ="," , fill = TRUE)
+#IPC <- read_excel(paste0(wd$data,"IPC.csv"), sheet = "Sheet1")
+
+sapply(IPC, class)
+colnames(IPC) <- c("StateN", "YEAR", "IPC","state")
+data <- merge(data, IPC, by = c("state", "StateN", "YEAR"), all.x = TRUE)
+
+table(IPC$X)
+table(data$StateN, data$state)
+
+
+```
+
+# further cleaning
+## married 
+```{r}
+
+data$MARRYX <- replace(data$MARRYX,data$MARRYX %in% c(3,4,5),2)
+
+```
+
+##employed:
+
+```{r}
+data$EMPST31 <- replace(data$EMPST31, data$EMPST31 %in% c(2,3),1) # Employed
+data$EMPST31 <- replace(data$EMPST31, data$EMPST31==4,2) #unemployed
+
+
+```
+
+## risk taking
+
+make it a dummy variable if person somewhat or strongly agrees that they are MORE LIKELY TO TAKE RISKS I recode this to 1, yes and if the person disagrees or uncertain recode to 2 or disagree
+
+```{r}
+
+data$ADRISK42 <- replace(data$ADRISK42, data$ADRISK42 %in% c(1,3),2) # Disagree
+data$ADRISK42 <- replace(data$ADRISK42, data$ADRISK42 %in% c(4,5),1) # Agree
+
+
+
+```
+
+## overcome illnes on their own
+```{r}
+
+data$ADOVER42 <- replace(data$ADOVER42, data$ADOVER42 %in% c(1,3),2) # Disagree 
+data$ADOVER42 <- replace(data$ADOVER42, data$ADOVER42 %in% c(4,5),1) # Agree
+
+
+RAW<-data
+
+```
+
+Format:	
+
+subset my population of interest:
+
+My population of interest are :
+people aged 50-64
+income low less than 138
+
+```{r}
+
+data<- data %>% filter(AGE >49 & AGE<65)
+data<- data %>% filter(POVLEV<139)
+
+
+fyc2014<- fyc2014 %>% filter(AGE >49 & AGE<66)
+
+MEPS<- MEPS %>% filter(AGE >18)
+
+
+
+
+```
+
+## Save data for later
+
+```{r}
+
+
+save(data, file =paste0(wd$data,"RAWMEPS.RData"))
+
+load(paste0(wd$data,"RAWMEPS.RData"))
+
+MEPS<- data
+
+
+```
+

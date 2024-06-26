@@ -244,5 +244,223 @@ data<-rbind(fyc17,fyc18)
 
 b<-data$DUPERSID[duplicated(data$PANEL)]
 ```
+checking for loop
+```{r}
 
+for (year in 2015:2016) {
+    
+    dataset_name <- paste0("fyc", year) 
+
+    assign(dataset_name, read_MEPS(year = year, type = "FYC"))  ## loading dataset
+    
+    a<-print(colnames(get(dataset_name)))
+
+}
+```
+## checking the different between two dataset col names?
+
+```{r}
+
+d1<-colnames(fyc11)
+d2<-colnames(fyc18)
+
+d1<- columns_to_select
+
+d2<- c(
+    "DUPERSID", "DUID", "PANEL", "PID", "PSTATS31", "PSTATS42", "PSTATS53", "PERWT", "VARSTR", "VARPSU", "SPOUID31", # IDS and weights
+    "AGE", "SEX", "RACETHX", "HISPANX", "MARRYX", "FAMS1231", "EMPST31", "POVCAT", "POVLEV", "DOBYY", "REGION", "EDRECODE", # Demographic
+    "BORNUSA", "USBORN42", "LIVEUS42", "YRSINUS", "ENGSPK42", "HWELLSPE", # Immigration
+    "INSURC", "MCDEV", "MCREV", "PRVEV", "UNINS", "INSCOV", "PRIV", # Insurance
+    "CABREAST", "CACERVIX", "CACOLON", "CAPROSTA", "CANCERDX", "CAOTHER", # Cancer diagnoses
+    "HIBPDX", "DIABDX", "ASTHDX", "CHDDX", "ARTHDX", "CANCERDX", # Comorbidities
+    # "HYSTER53", "PAPSMR53", # Cervical Cancer
+    "CLNTST53", "SGMTST53",  # Colorectal Cancer (dropped CLNTRE53, SGMTRE53)
+    "MAMOGR53",  # Breast Cancer
+    # "PSA53", # Prostate Cancer
+    "ADRISK42", "ADOVER42", "HAVEUS42", "RTHLTH42", "ADSMOK42", "PHYEXE53" # Health and health behavior
+)
+
+setdiff(d1,d2)
+setdiff(d2,d1)
+
+
+
+
+setdiff(d1,d2)
+[1] "ADRISK42" "ADOVER42" "ADSMOK42"
+> 
+> setdiff(d2,d1)
+[1] "HWELLSPE" "CLNTST53" "SGMTST53" "MAMOGR53" "YEAR" 
+
+```
+
+```{r}
+
+fyc19<-fyc2019
+fyc19$CLNTST53<-99999
+
+######################## from 2020 #############
+matching_indices <- match(fyc19$DUPERSID, fyc2020$DUPERSID)
+
+# Create a logical vector indicating non-missing matching indices
+valid_matching_indices <- !is.na(matching_indices)
+
+# Get the corresponding PANEL values for the matched indices
+panel_values <- fyc2020$PANEL[matching_indices[valid_matching_indices]]
+
+# Find the indices where PANEL is 24
+panel_24_indices <- panel_values == 24
+
+# Use these indices to subset the replacement values correctly
+replacement <- fyc2020$CLNTST53[matching_indices[valid_matching_indices][panel_24_indices]]
+
+# Now replace the values in fyc19
+fyc19$CLNTST53 <- replace(fyc19$CLNTST53, valid_matching_indices & fyc19$PANEL == 24, replacement)
+
+######################## from 2018 #############
+
+
+matching_indices <- match(fyc19$DUPERSID, fyc18$DUPERSID)
+
+# Create a logical vector indicating non-missing matching indices
+valid_matching_indices <- !is.na(matching_indices)
+
+# Get the corresponding PANEL values for the matched indices
+panel_values <- fyc18$PANEL[matching_indices[valid_matching_indices]]
+
+# Find the indices where PANEL is 24
+panel_23_indices <- panel_values == 23
+
+# Use these indices to subset the replacement values correctly
+replacement <- fyc18$CLNTST53[matching_indices[valid_matching_indices][panel_23_indices]]
+
+# Now replace the values in fyc19
+fyc19$CLNTST53 <- replace(fyc19$CLNTST53, valid_matching_indices & fyc19$PANEL == 23, replacement)
+
+
+
+table(fyc19$CLNTST53)
+
+```
+
+create a function that generate table for list of variables
+
+```{r}
+
+variables_to_check <- c('FAMS1231', 'EMPST31', 'BORNUSA', 'YRSINUS', 'ENG', 'CLNTST53', 'SGMTST53', 'MAMOGR53')
+
+FAMS1231, EMPST31, BORNUSA, YRSINUS, ENG, CLNTST53, SGMTST53, MAMOGR53, HIBPDX, DIABDX, ASTHDX, CHDDX, ARTHDX, CANCERDX
+ HAVEUS42, RTHLTH42, PHYEXE53, ADRISK42, ADOVER42, ADSMOK42
+ 
+
+generate_table <- function(dataset, var_name) {
+  table(dataset[[var_name]])
+}
+
+tables_list <- lapply(variables_to_check, function(var) generate_table(data, var))
+names(tables_list) <- variables_to_check
+
+for (var in names(tables_list)) {
+  cat("\nTable for", var, ":\n")
+  print(tables_list[[var]])
+}
+
+```
+check how are the people how have no clonscopy 
+
+```{r}
+
+check <- data %>%
+  filter(ADSMOK42 == -1) 
+
+check1 <- fyc16 %>%
+  filter(DUPERSID==2110806109) 
+
+data$CANCERDX
+
+bindraw<- fyc2018 %>% filter(AGE >49 & AGE<65 )
+
+table(check$YEARcheck$CHDDX)
+table(check$AGE)
+table(check$YEAR)
+
+table(check$SAQELIG)
+table(check$SAQELIG,check$SGMTST53)
+
+table(check$MAMOGR53, check$SEX)
+
+```
+
+## changing 2 to 0 for dummy variables 
+
+I want to create a function to change 2 to 0 for my variables, Two way I wrote the function using the 
+
+Base 
+
+```{r}
+
+dummy <- function(df, col) {
+  df[[col]] = as.numeric ( df[[col]])
+  df[[col]][df[[col]] == 2] <- 0
+  return(df)
+}
+
+# Modify data using dummy function for SEX column only
+
+# data <- dummy(data, "SEX")
+
+# table(data$SEX)
+
+```
+
+
+
+using dplyr 
+
+
+```{r}
+
+library(dplyr)
+
+dummy <- function(df, col) {
+  #col <- enquo(col)  # Convert the column name to a quosure
+  col <- sym(col)
+  df <- df %>%
+    mutate(
+      {{ col }} := as.numeric ( {{ col }}),
+      {{ col }} := case_when(
+      {{ col }} == 2 ~ 0,
+      TRUE ~ {{ col }}
+    ))
+  
+  return(df)
+}
+
+
+
+```
+
+check my function
+
+```{r}
+
+for (var in c("SEX", "UNINS")) {
+  data <- dummy(data, var)
+}
+
+```
+
+ look at the table of all variables
+ 
+```{r}
+
+
+for (var in Allvariables){
+ data %>% 
+    count(var)
+  
+}
+
+```
+ 
 

@@ -1,0 +1,300 @@
+---
+title: "02-preliminary-regression-analysis: Colonscopy"
+output: html_notebook
+---
+
+## 1. Control variables global
+
+```{r}
+ Allvariables<-c(
+    'YEAR', "DUPERSID", "DUID", "PANEL", "PID", "PSTATS31", "PSTATS42", "PSTATS53", "PERWT", 
+    "VARSTR", "VARPSU", "SPOUID31", # IDS and weights
+    "AGE", "FEMALE", "RACETHX", "HISPANX", "MARRYX", "FAMS1231", "EMPST31", "POVCAT", 
+    "POVLEV", "DOBYY", "REGION", "EDUC", # Demographic
+    "BORNUSA", "YRSINUS", "HWELLSPE", 'HWELLSPK','ENGSPK42',"ENG", "USBORN42", "LIVEUS42", # Immigration
+    "INSURC", "MCDEV", "MCREV", "PRVEV", "UNINS", # Insurance
+    "CABREAST","CACOLON", # "CACERVIX",  "CAPROSTA", "CANCERDX", "CAOTHER", # Cancer diagnoses
+    "CLNTST53", "SGMTST53", # Colorectal Cancer
+    "MAMOGR53", # Breast Cancer
+    "HIBPDX", "DIABDX", "ASTHDX", "CHDDX", "ARTHDX", "CANCERDX", # Comorbidities
+    "HAVEUS42", "RTHLTH42", "PHYEXE53", # Health and health behavior 
+    "ADRISK42", "ADOVER42","ADSMOK42",
+    'state', 'ExpansionY', "Adopted", "treat", 'UnempR', 'IPC'
+)
+
+screening <- c("CLNTST53", "SGMTST53", 'MAMOGR53')
+comorbidity <- c("HIBPDX", "DIABDX", "ASTHDX", "CHDDX", "ARTHDX", "CANCERDX")
+demographic <- c("AGE", "FEMALE", "RACETHX", "MARRYX", "FAMS1231", "EMPST31", "POVCAT","EDUC")
+immigration <- c("BORNUSA", "YRSINUS","ENG")
+risk <- c("ADRISK42", "ADOVER42") 
+healthbhv <- c("HAVEUS42", "PHYEXE53","ADSMOK42")
+statevar<- c('UnempR', 'IPC')
+other <- c("INSURC")
+other <- c('UNINS', "HAVEUS42", "RTHLTH42" )
+
+
+```
+
+
+## 2.  Further preparation of data
+
+### subseting based on inclusion criteria
+
+```{r}
+
+CDATA<- RAW %>% filter(AGE >49 & AGE<65,
+                       POVLEV<139,
+                       CLNTST53 %in% c(0,1),
+                      SGMTST53 %in% c(0,1)
+                       )
+
+
+```
+
+
+change values of 2 to 0 for var that have this
+
+functtion that creates the 
+```{r}
+
+library(dplyr)
+
+dummy <- function(df, col) {
+  #col <- enquo(col)  # Convert the column name to a quosure
+  col <- sym(col)
+  df <- df %>%
+    mutate(
+      {{ col }} := as.numeric ( {{ col }}),
+      {{ col }} := case_when(
+      {{ col }} == 2 ~ 0,
+      TRUE ~ {{ col }}
+    ))
+  
+  return(df)
+}
+
+```
+
+
+
+```{r}
+colnames(CDATA)
+
+for (var in c('HISPANX', 'BORNUSA', 'MCDEV', 'MCREV', 'PRVEV', 'UNINS','HIBPDX', 'DIABDX', 'ASTHDX', 'CHDDX', 'ARTHDX', 'CANCERDX', 'HAVEUS42', 'PHYEXE53')) {
+  CDATA <- dummy(data, var)
+}
+
+table(CDATA$BORNUSA, CDATA$YEAR)
+
+```
+
+```{r}
+table(CDATA$ADRISK42)
+
+
+CHDDX, HIBPDX, CANCERDX
+```
+
+
+
+
+```{r, include = FALSE}
+
+
+   check <- check %>% 
+    mutate(
+      
+      BORNUSA = as.numeric(BORNUSA),
+     
+      
+      # Convert outcome from 1/2 to 0/1:
+      USBORN = case_when(
+        BORNUSA == 1 ~ 1,
+        BORNUSA == 2 ~ 0,
+        BORNUSA == -1 ~ 0,
+        TRUE ~ BORNUSA),
+          )
+
+
+## Make this a function for making 2 -> 1 
+ #subcheck <- subcheck %>% 
+ #   mutate(
+      
+      # Convert outcome from 1/2 to 0/1:
+    #  var2 = case_when(
+    #    var2 == 1 ~ 0,
+   #     var2 == 0 ~ 1,
+     #   TRUE ~ var2),
+     #     )
+ 
+ # subcheck$BORNUSA<-subcheck$var2
+
+
+#table(subcheck$USBORN)
+#table(subcheck$ForeginBorn)
+#table(subcheck$BORNUSA)
+#table(subcheck$var2)
+
+
+```
+
+## 3. Define a survey design
+ 
+```{r}
+
+ mepsdsgn = svydesign(
+    id = ~VARPSU,
+    strata = ~VARSTR,
+    weights = ~poolwt,
+    data = check,
+    nest = TRUE)
+
+```
+ 
+
+## 3. Regression
+
+### GLM Fixest
+
+unadjusted only trest
+
+```{r, echo=FALSE}
+
+formula<- CLNTST53 ~ treat 
+
+glm2 <- feglm( formula , weights = ~poolwt, data = check, family = quasibinomial )
+
+glm2
+
+```
+
+
+### TWFE 
+
+Linear probability Model 
+
+#### Colonscopy
+
+```{r,echo=FALSE}
+
+reg = feols(CLNTST53 ~ treat*BORNUSA  | state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) # Control for demographic + immigrants + state
+reg1 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] | state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) # C
+
+reg2 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] + .[comorbidity]| state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) # C
+
+reg3 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] + .[comorbidity] + .[healthbhv]| state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) 
+
+reg4 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] + .[comorbidity] + .[healthbhv]+ .[risk]| state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) 
+
+reg5 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] + .[comorbidity] + .[healthbhv] + .[risk] + .[immigration] | state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) 
+
+reg6 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] + .[comorbidity] + .[healthbhv] + .[risk] + .[immigration]  + .[statevar] | state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) 
+
+reg7 = feols(CLNTST53 ~ treat*BORNUSA + .[demographic] + .[comorbidity] + .[healthbhv] + .[risk] + .[immigration]  + .[statevar]  + .[other] | state + YEAR  , vcov = "hetero", weights = ~poolwt, data = check) 
+
+etable(reg,reg1,reg2,reg3,reg4,reg5,reg6,reg7)
+
+
+```
+
+## 4.Simple Intrupted time series 
+
+### Unadjusted 
+
+```{r, echo=FALSE}
+
+check <- check %>%
+  mutate(Post = ifelse(YEAR > 2014 , 1,0))
+
+#table(check$Post)
+
+tireg <- feols(CLNTST53 ~ YEAR+ Post*YEAR, data = check,vcov = "hetero" , weights= ~poolwt)
+
+etable(tireg)
+iplot(tireg)
+
+check <- check %>%
+  mutate(Period = YEAR-2014)
+
+
+tireg1 <- feols(CLNTST53 ~ i(Period, ref=-1), data = check, vcov = "iid" ,weights= ~poolwt)
+
+#etable(tireg)
+
+#tireg2 <- feols(CLNTST53 ~ USBORN*i(Period, ref=-1), data = check, vcov = "iid" ,weights= #~poolwt)
+#iplot(tireg2)
+#etable(tireg2)
+
+#subsample analysis
+
+tireg3 <- feols(CLNTST53 ~ i(Period, ref=-1), data = check, vcov = "iid" ,weights= ~poolwt, fsplit = ~USBORN)
+
+etable(tireg3)
+
+
+
+
+```
+
+### Adjusted 
+
+```{r, echo=FALSE}
+
+
+tiregc1 <- feols(CLNTST53 ~ i(Period, ref=-1)+ .[demographic], data = check, vcov = "iid" ,weights= ~poolwt)
+
+iplot(tiregc1)
+etable(tiregc1)
+
+tiregc3 <- feols(CLNTST53 ~ i(Period, ref=-1) + .[demographic], data = check, vcov = "iid" ,weights= ~poolwt, fsplit = ~USBORN)
+
+etable(tiregc3)
+
+iplot(tiregc3)
+
+
+
+
+```
+
+
+
+
+## 4. Trend Analysis
+
+```{r, echo=FALSE}
+
+agrdata  <- aggregate(CLNTST53 ~ YEAR + USBORN, data = check, FUN = mean)
+
+agrdata <- svyby( ~CLNTST53, ~ YEAR + USBORN, design = mepsdsgn ,FUN = svymean)
+
+
+
+ggplot(agrdata, aes(x = factor(YEAR), y = CLNTST53, color = factor(USBORN), group = factor(USBORN)) ) +
+  geom_line() +
+  geom_point() +
+  labs(title = "Colonscopy Screening Rates Over Years", x = "Year", y = "Screening Rate (%)") +
+  theme_minimal() 
+
+```
+
+
+```{r}
+
+trend_model <- lm(CLNTST53 ~ YEAR, data = check)
+summary(trend_model)
+
+ggplot(check, aes(x = YEAR, y = CLNTST53)) +
+  geom_line() +
+  geom_point() +
+  geom_smooth(method = "lm", se = FALSE, color = "red") +
+  labs(title = "Cancer Screening Rates Over Years with Trend Line", x = "Year", y = "Screening Rate (%)") +
+  theme_minimal()
+
+class(agrdata$YEAR)
+```
+
+
+
+ 
+ 

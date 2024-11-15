@@ -48,6 +48,8 @@ CDATA<- RAW %>% filter(AGE >49 & AGE<65,
                       SGMTST53 %in% c(0,1)
                        )
 
+FORG<-CDATA %>% filter(BORNUSA == 2)
+
 
 ```
 
@@ -81,10 +83,10 @@ dummy <- function(df, col) {
 colnames(CDATA)
 
 for (var in c('HISPANX', 'BORNUSA', 'MCDEV', 'MCREV', 'PRVEV', 'UNINS','HIBPDX', 'DIABDX', 'ASTHDX', 'CHDDX', 'ARTHDX', 'CANCERDX', 'HAVEUS42', 'PHYEXE53')) {
-  CDATA <- dummy(data, var)
+  CDATA <- dummy(CDATA, var)
 }
 
-table(CDATA$BORNUSA, CDATA$YEAR)
+table(CDATA$YEAR)
 
 ```
 

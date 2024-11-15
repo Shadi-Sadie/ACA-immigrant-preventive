@@ -463,4 +463,96 @@ for (var in Allvariables){
 
 ```
  
+ check cancer screening
+ 
+```{r}
+
+fyc2018<-read_MEPS(year = 2018, type = "FYC")
+
+
+table(fyc2018$ADCOLN42, fyc2018$ADCLNS42)
+```
+ 
+
+
+
+## 9. Inclusion critera
+
+Format:	
+
+subset my population of interest:
+
+My population of interest are :
+people aged 50-64
+income low less than 138
+
+```{r}
+
+data<- data %>% filter(AGE >49 & AGE<65)
+data<- data %>% filter(POVLEV<139)
+
+
+```
+
+
+## 10. Missing values Fixes
+
+### remove NAs
+
+check what colum have values -9, 
+
+```{r}
+-9  -7 -8  -15 
+
+data %>%
+  sapply(function(col) any(col == -9)) %>%
+  which() %>%
+  names()
+
+# same as the above function
+names(which( sapply(CDATA,function(col) any(col == -1))))
+
+
+table(CDATA$EMPST31)
+```
+
+now removing these values
+
+
+```{r}
+any(is.na(data)) # check if there are any NA values in data
+
+data<-CDATA
+data[data == -9 | data == -7| data == -8 | data == -15] <- NA
+
+data <- na.omit(data)
+
+```
+
+### check variable with -1 
+
+check which variable have values == -1
+
+```{r}
+# Identify and display columns with the value -1
+data %>%
+  sapply(function(col) any(col == -1)) %>%
+  which() %>%
+  names()
+
+```
+
+ following variables have values -1 and thus need to be delt with : 
+ 
+ FAMS1231, EMPST31, BORNUSA, YRSINUS, ENG, CLNTST53, SGMTST53, MAMOGR53, HIBPDX, DIABDX, ASTHDX, CHDDX, ARTHDX, CANCERDX
+ HAVEUS42, RTHLTH42, PHYEXE53, ADRISK42, ADOVER42, ADSMOK42
+ 
+```{r}
+
+table(data$ADSMOK42, data$YEAR)
+
+
+
+```
+ 
 

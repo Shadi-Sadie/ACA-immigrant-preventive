@@ -1,0 +1,58 @@
+	treat		
+SEX	0	1	Total
+BORNUSA: 
+1 MALE	0.51	0.43	0.46
+2 FEMALE	0.49	0.57	0.54
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 214.3404			
+Design-based F(1.00, 84.00) = 0.3310 Pr = 0.567			
+
+BORNUSA: 
+1 MALE	0.45	0.45	0.45
+2 FEMALE	0.55	0.55	0.55
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 0.5757			
+Design-based F(1.00, 150.00) = 0.0004 Pr = 0.984			
+
+BORNUSA: 
+1 MALE	0.46	0.51	0.49
+2 FEMALE	0.54	0.49	0.51
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 124.3785			
+Design-based F(1.00, 41.00) = 0.1276 Pr = 0.723			
+
+BORNUSA: 
+1 MALE	0.52	0.55	0.53
+2 FEMALE	0.48	0.45	0.47
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 105.8740			
+Design-based F(1.00, 75.00) = 0.2704 Pr = 0.605			
+
+BORNUSA: 
+1 MALE	0.51	0.58	0.51
+2 FEMALE	0.49	0.42	0.49
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 61.1296			
+Design-based F(1.00, 207.00) = 0.1075 Pr = 0.743			
+
+BORNUSA: 
+1 MALE	0.49	0.49	0.49
+2 FEMALE	0.51	0.51	0.51
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 0.3948			
+Design-based F(1.00, 396.00) = 0.1750 Pr = 0.676			
+
+BORNUSA: 
+1 MALE	0.49	0.48	0.49
+2 FEMALE	0.51	0.52	0.51
+Total	1.00	1.00	1.00
+
+Pearson: Uncorrected chi2(1) = 5.3386			
+Design-based F(1.00, 395.00) = 0.6214 Pr = 0.431			
+

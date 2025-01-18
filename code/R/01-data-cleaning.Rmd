@@ -103,6 +103,7 @@ columns_to_select <- c(
     "MAMOGR53", # Breast Cancer
     "HIBPDX", "DIABDX", "ASTHDX", "CHDDX", "ARTHDX", "CANCERDX", # Comorbidities
     "HAVEUS42", "RTHLTH42", "PHYEXE53", # Health and health behavior 
+    "VPCS42", "VMCS42","PCS42","MCS42"
     "ADRISK42", "ADOVER42","ADSMOK42"
 )
 
@@ -530,6 +531,21 @@ for year 2011
             fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS==0,1)  #  1 LESS THAN 1 YEAR
 
 ```
+### SF-12vtv 
+
+## Physical health component
+
+```{r}
+
+```
+
+
+## Mental health component
+
+```{r}
+
+```
+
 
 
 
@@ -589,7 +605,7 @@ allyear = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc17,fyc18,fyc19) %>%
 partyear = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc18) %>%
   mutate(poolwt = PERWT / 7)
 
-data <- partyear
+data <- allyear
 
 # data <- allyear
 
@@ -652,6 +668,7 @@ data$MARRYX <- replace(data$MARRYX,data$MARRYX %in% c(2,3,4,5),0)
 ```{r}
 data$EMPST31 <- replace(data$EMPST31, data$EMPST31 %in% c(2,3),1) # Employed
 data$EMPST31 <- replace(data$EMPST31, data$EMPST31==4,0) #unemployed
+data$EMPST31<- ordered(data$EMPST31, labels = c("unemployed", "employed"))
 
 
 ```
@@ -790,6 +807,7 @@ data <- merge(data, UNEMPR, by = c( "state", "YEAR" ), all.x = TRUE)
 
 table(data$StateN)
 
+table(data$state)
 
 ```
 
@@ -819,7 +837,21 @@ data$IPC<-ifelse(data$StateN == "North Carolina" & data$YEAR==2016 & is.na(data$
 
 
 
-## 9. Save data for later
+## 9. Handeling Missing variables
+
+```{r}
+
+dataset<-data
+dataset[dataset == -15 | dataset == -9 | dataset == -8 | dataset==-7] <- NA
+dataset<- na.omit(dataset)
+
+```
+
+
+
+
+
+## 10. Save data for later
 
 # RAW<-data
 
@@ -840,6 +872,12 @@ data$IPC<-ifelse(data$StateN == "North Carolina" & data$YEAR==2016 & is.na(data$
 #load(paste0(wd$data,"RAWMEPS.RData"))
 
 #MEPS<- data
+
+
+library(haven)
+
+# Example: Save as Stata file
+write_dta(dataset, paste0(wd$data,"RAWMEPS.dta"))
 
 
 ```

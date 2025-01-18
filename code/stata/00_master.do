@@ -5,6 +5,14 @@
 *---------------------------------------------------------------*
 
 
+
+* Install necessary packages
+
+ssc install tabout, replace
+
+
+* Set global paths
+
 global dofile 		"/home/shadi/Projects/GitHub/ACA-immigrant-preventive/codes/stata/"
 global data 		"/home/shadi/Projects/GitHub/ACA-immigrant-preventive/data/"
 global datatemp 	"/home/shadi/Projects/GitHub/ACA-immigrant-preventive/codes/stata/temp"
@@ -13,6 +21,11 @@ global output 		"/home/shadi/Projects/GitHub/ACA-immigrant-preventive/output/"
 
 clear all
 set more off
+
+* Set survey weight
+
+svyset [pweight=poolwt], strata( VARSTR) psu(VARPSU) vce(linearized) singleunit(missing)
+
 
 *******************************
 * Run data import and cleaning*

@@ -8,7 +8,7 @@ output: html_notebook
 
 This is first attempt for data cleaning for paper 2
 
-```{r}
+```{r,eval=FALSE}
 
 ADRISK42, ADOVER42, HAVEUS42, RTHLTH42, ADSMOK42, PHYEXE53
 
@@ -71,7 +71,7 @@ wd <- list()
 wd$data   <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/data/"
 wd$output <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/output/"
 wd$texts <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/text/"
-wd$codes <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/codes/R/"
+wd$codes <- "/home/shadi/Projects/GitHub/ACA-immigrant-preventive/code/R/"
 
 
 ```
@@ -103,7 +103,7 @@ columns_to_select <- c(
     "MAMOGR53", # Breast Cancer
     "HIBPDX", "DIABDX", "ASTHDX", "CHDDX", "ARTHDX", "CANCERDX", # Comorbidities
     "HAVEUS42", "RTHLTH42", "PHYEXE53", # Health and health behavior 
-    "VPCS42", "VMCS42","PCS42","MCS42"
+    "VPCS42", "VMCS42","PCS42","MCS42",
     "ADRISK42", "ADOVER42","ADSMOK42"
 )
 
@@ -146,7 +146,10 @@ for (year in 2011:2019) {
               base_renames <- base_renames %>%
                   rename(
                       DIABDX = DIABDX_M18,
-                      EDUC = HIDEG
+                      EDUC = HIDEG ,
+                      PCS42 = VPCS42,
+                      MCS42 = VMCS42
+
                   )
        } else if (year == 2018) {       #renames specific to 2019
               base_renames <- base_renames %>%
@@ -155,13 +158,24 @@ for (year in 2011:2019) {
                       EDUC = HIDEG,
                       CLNTST53 = ADCLNS42,
                       SGMTST53 = ADSGMD42,
-                      MAMOGR53 = ADMMGR42
+                      MAMOGR53 = ADMMGR42,
+                      PCS42 = VPCS42,
+                      MCS42 = VMCS42
+
                   )  
-      } else if (year %in% c(2017,2016)) {  # Add other renames specific to 2017-2016
-              base_renames <- base_renames %>%
-                   rename(
-                     EDUC=HIDEG
-                  )
+       } else if (year == 2017) {  # Rename specific to 2017
+        base_renames <- base_renames %>%
+            rename(
+                EDUC = HIDEG,
+                PCS42 = VPCS42, # Rename specific to 2017
+                MCS42 = VMCS42
+            )
+    } else if (year %in% c(2016)) {
+        base_renames <- base_renames %>%
+            rename(
+                EDUC = HIDEG
+            )
+
       }  else if (year %in% c(2013,2014,2015)) {
               base_renames <- base_renames %>%
                    rename(
@@ -203,7 +217,7 @@ selected_columns <- intersect(columns_to_select, colnames(get(dataset_name)))
 
 new_data_selected <- get(dataset_name) %>%
         select(selected_columns)
-assign(paste0("fyc", substring(year, 3)), new_data_selected)
+assign(paste0("fyc", substring(year, 3,4)), new_data_selected)
 
 }
    
@@ -224,6 +238,38 @@ fyc2020$CLNTST53<-replace(fyc2020$CLNTST53, fyc2020$CLNTST53 %in% c(2,3),0) # 0 
 fyc2020$SGMTST53<-replace(fyc2020$SGMTST53, fyc2020$SGMTST53 %in% c(2,3),0) # 0 : No semidoscopy within 5 years
 fyc2020$MAMOGR53<-replace(fyc2020$MAMOGR53, fyc2020$MAMOGR53 %in% c(2,3),0) # 0 : No colonscopy within 2 years
 
+# Create labeled factors for each variable
+
+  fyc2020$CLNTST53 <- labelled( fyc2020$CLNTST53,
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had colonoscopy within 10 years"
+                              )
+
+    fyc2020$SGMTST53 <- labelled( fyc2020$SGMTST53,
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had semidoscopy within 5 years"
+                              )
+
+                      
+    fyc2020$MAMOGR53 = labelled((fyc2020$MAMOGR53), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had mammogram within 2 years"
+                              )
+
+
+
+
+
+
 ```
 
 ## 4. Cleaning variables
@@ -234,10 +280,47 @@ fyc2020$MAMOGR53<-replace(fyc2020$MAMOGR53, fyc2020$MAMOGR53 %in% c(2,3),0) # 0 
 for 2018 
 
 ```{r}
+fyc18 <- fyc18 %>%
+  mutate(
+    # Replacing values
+    CLNTST53 = replace(CLNTST53, CLNTST53 %in% c(2, 3), 0),
+    SGMTST53 = replace(SGMTST53, SGMTST53 %in% c(2, 3), 0),
+    MAMOGR53 = replace(MAMOGR53, MAMOGR53 %in% c(2, 3), 0)
+  )
 
-fyc18$CLNTST53<-replace(fyc18$CLNTST53, fyc18$CLNTST53 %in% c(2,3),0) # 0 : No colonscopy within 10 years
-fyc18$SGMTST53<-replace(fyc18$SGMTST53, fyc18$SGMTST53 %in% c(2,3),0) # 0 : No semidoscopy within 5 years
-fyc18$MAMOGR53<-replace(fyc18$MAMOGR53, fyc18$MAMOGR53 %in% c(2,3),0) # 0 : No colonscopy within 2 years
+
+    # Assigning labels using haven::labelled
+  fyc18$CLNTST53 <- labelled( fyc18$CLNTST53,
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had colonoscopy within 10 years"
+                              )
+
+    fyc18$SGMTST53 <- labelled( fyc18$SGMTST53,
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had semidoscopy within 5 years"
+                              )
+
+                      
+    fyc18$MAMOGR53 = labelled((fyc18$MAMOGR53), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had mammogram within 2 years"
+                              )
+
+                      
+
+
+
+
+
 
 ```
 
@@ -256,18 +339,53 @@ for (i in seq_along(datasets)) {
   data$CLNTST53 <- ifelse(data$CACOLON == 1, -1, data$CLNTST53)
   data$CLNTST53 <- replace(data$CLNTST53, data$CLNTST53 %in% 1:5, 1)  # YES Colonscopy within 10 years
   data$CLNTST53 <- replace(data$CLNTST53, data$CLNTST53 %in% c(6, 7), 0) # NO
+  data$CLNTST53 <- replace(data$CLNTST53, data$CLNTST53 %in% c(-9, -8,-7), -15) # N/A
+
+  
+    ### Add labels 
+    data$CLNTST53 <- labelled( data$CLNTST53,
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had colonoscopy within 10 years"
+                              )
+
   
   # Semidoscoy - SGMTST53
   data$SGMTST53 <- ifelse(data$AGE < 50, -1, data$SGMTST53)
   data$SGMTST53 <- ifelse(data$CACOLON == 1, -1, data$SGMTST53)
-  data$SGMTST53 <- replace(data$SGMTST53, data$SGMTST53 %in% 1:4, 1)  # YES Colonscopy within 10 years
+  data$SGMTST53 <- replace(data$SGMTST53, data$SGMTST53 %in% 1:4, 1)  # YES semidoscopy within 5 years
   data$SGMTST53 <- replace(data$SGMTST53, data$SGMTST53 %in% c(5, 6, 7), 0) # NO
+  data$SGMTST53 <- replace(data$SGMTST53, data$SGMTST53 %in% c(-9, -8,-7), -15) # N/A
+
+   ## add labels
+      data$SGMTST53 <- labelled( data$SGMTST53,
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had semidoscopy within 5 years"
+                              )
+
   
   # Mammogram - MAMOGR53
   data$MAMOGR53 <- ifelse(data$AGE < 50, -1, data$MAMOGR53)
   data$MAMOGR53 <- ifelse(data$CABREAST == 1, -1, data$MAMOGR53)
   data$MAMOGR53 <- replace(data$MAMOGR53, data$MAMOGR53 %in% 1:2, 1)  # YES Mammogram within 10 years
   data$MAMOGR53 <- replace(data$MAMOGR53, data$MAMOGR53 %in% 3:6, 0)  # NO
+  data$MAMOGR53 <- replace(data$MAMOGR53, data$MAMOGR53 %in% c(-9, -8,-7), -15) # N/A
+  
+   ### Add labels
+        data$MAMOGR53 = labelled((data$MAMOGR53), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Had mammogram within 2 years"
+                              )
+
+  
 
   datasets[[i]] <- data
 }
@@ -287,8 +405,8 @@ Imputing for year 2017 and 2019
 ```{r}
 # Initialize columns with 99999
 cols <- c("CLNTST53", "SGMTST53", "MAMOGR53")
-fyc19[cols] <- 99999
-fyc17[cols] <- 99999
+fyc19[cols] <- -15
+fyc17[cols] <- -15
 
 # Update fyc19 columns from fyc2020
 matching_indices <- match(fyc19$DUPERSID, fyc2020$DUPERSID)
@@ -334,9 +452,29 @@ for (i in seq_along(datasets)) {
  data$EDUC<-replace(data$EDUC, data$EDUC %in% c(2,3,7),2)# 2: GED or High school  2,3
  data$EDUC<-replace(data$EDUC, data$EDUC == 4,3) # 3: Bachelors
  data$EDUC<-replace(data$EDUC, data$EDUC %in% c(5,6),4) # 4: Master's and doctorate
+ data$EDUC<-replace(data$EDUC, data$EDUC %in% c(-7,-8,-9),-15) # NA
+ 
+ 
+    ## add labels
+      data$EDUC <- labelled( data$EDUC,
+                              labels = c("No Degree" = 1 ,
+                                          "GED/High School" = 2, 
+                                         "Bachelors" = 3 , 
+                                         "Master/Doctorate" = 4,
+                                         INAPPLICABLE = 8 , 
+                                         "N/A" = -15) ,
+                              label = "Education Level"
+                              )
+
 
   datasets[[i]] <- data
 }
+
+
+
+
+
+
 
 # Reassign the modified datasets back to the original variables
 fyc16 <- datasets[[1]]
@@ -363,7 +501,22 @@ for (i in seq_along(datasets)) {
   data$EDUC<-replace(data$EDUC, data$EDUC %in% 13:14, 2) # 2: GED or High school  2,3
   data$EDUC<-replace(data$EDUC, data$EDUC==15, 3) # 3: Bachelors
   data$EDUC<-replace(data$EDUC, data$EDUC==16, 4) # 4: Master's and doctorate
+ data$EDUC<-replace(data$EDUC, data$EDUC %in% c(-7,-8,-9),-15) # NA
 
+  
+     ## add labels
+      data$EDUC <- labelled( data$EDUC,
+                              labels = c("No Degree" = 1 ,
+                                          "GED/High School" = 2, 
+                                         "Bachelors" = 3 , 
+                                         "Master/Doctorate" = 4,
+                                         INAPPLICABLE = -1 , 
+                                         "N/A" = -15) ,
+                              label = "Education Level"
+                              )
+
+  
+  
   datasets[[i]] <- data
 }
 
@@ -385,7 +538,21 @@ for year 2019
 
 fyc19$ENG<- replace(fyc19$HWELLSPK,fyc19$HWELLSPK %in% c(1,2), 0) # comfortable speaking English
 fyc19$ENG<- replace(fyc19$ENG,fyc19$ENG %in% c(3,4), 1 ) #  not comfortable speaking English
-fyc19$ENG<- ifelse(fyc19$OTHLGSPK==2, 0, fyc19$ENG)  #  # imputing -1 values to comfortable if person didn't speak any other language rather than Eng at home
+fyc19$ENG<- ifelse(fyc19$OTHLGSPK==2, 0, fyc19$ENG)  #  # imputing -1 values to comfortable if person didn't speak any other language rather than Eng at hom
+fyc19$ENG<- replace(fyc19$ENG,fyc19$ENG %in% c(-8,-9,-15), -15 ) # NA 
+
+## add lable 
+
+        fyc19$ENG = labelled((fyc19$ENG), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "Under 5 years old" = 5,
+                                         "N/A" = -15) ,
+                              label = "Not Comfortable speaking english"
+                              )
+
+
 fyc19 <- fyc19 %>% select(-HWELLSPK, -OTHLGSPK )
 
 ```
@@ -398,6 +565,7 @@ change it to binary that answer if the person is not comfortable speaking Englis
 fyc18$ENG<- ifelse(fyc18$PANEL== 22, fyc18$HWELLSPE,fyc18$HWELLSPK)
 fyc18$ENG<- replace(fyc18$ENG,fyc18$ENG %in% c(1,2), 0 ) # No, comfortable speaking English
 fyc18$ENG<- replace(fyc18$ENG,fyc18$ENG %in% c(3,4), 1 ) # Yes, Not comfortable speaking English
+fyc18$ENG<- replace(fyc18$ENG,fyc18$ENG %in% c(-8,-9,-15), -15 ) # NA 
 
 # imputing -1 values to comfortable if person didn't speak any other language rather than eng at home
 
@@ -406,6 +574,16 @@ fyc18$ENG<- ifelse(fyc18$BORNUSA==1 &  fyc18$ENG==-1 , 0, fyc18$ENG)
 
 
 # # imputing -1 values to comfortable if person didn't speak any other language rather than eng at home
+
+# add labels 
+        fyc18$ENG = labelled((fyc18$ENG), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "Under 5 years old" = 5,
+                                         "N/A" = -15) ,
+                              label = "Not Comfortable speaking english"
+                              )
 
 
 fyc18 <- fyc18 %>% select(-HWELLSPE, -HWELLSPK , -OTHLGSPK, -OTHLANG)
@@ -424,10 +602,24 @@ for (i in seq_along(datasets)) {
   
   data$ENG<- replace(data$HWELLSPE,data$HWELLSPE %in% c(1,2), 0 ) # No, comfortable speaking English
   data$ENG<- replace(data$ENG,data$ENG %in% c(3,4), 1 ) # Yes, not comfortable
+  data$ENG<- replace(data$ENG,data$ENG %in% c(-8,-9,-7,-15), -15 ) # NA 
+
 # imputing -1 values to comfortable if person didn't speak any other language rather than Eng at home
   data$ENG<- ifelse(data$OTHLANG==2, 0, data$ENG)
   data$ENG<- ifelse(data$BORNUSA==1 & data$ENG==-1, 0, data$ENG) 
 
+  # add labels 
+        data$ENG = labelled((data$ENG), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "Under 5 years old" = 5,
+                                         "N/A" = -15) ,
+                              label = "Not Comfortable speaking english"
+                              )
+
+  
+  
 
   data <-data  %>%  select(-HWELLSPE, - OTHLANG)
 
@@ -450,13 +642,33 @@ change in questionare this year half dataset half different question make them t
 
 fyc13$HWELLSPE<- replace(fyc13$HWELLSPE,fyc13$HWELLSPE %in% c(1,2), 2 ) # comfortable speaking english
 fyc13$HWELLSPE<- replace(fyc13$HWELLSPE,fyc13$HWELLSPE %in% c(3,4), 1) # not comfortable
+fyc13$HWELLSPE<- replace(fyc13$HWELLSPE,fyc13$HWELLSPE %in% c(-8,-9,-7,-15), -15 ) # NA 
+
 fyc13$ENG<- ifelse(fyc13$PANEL== 18, fyc13$HWELLSPE,fyc13$ENGSPK42)
 # imputing -1 values to comfortable if person didn't speak any other language rather than eng at home
 fyc13$ENG<- replace(fyc13$ENG, fyc13$ENG==2, 0)
 
 fyc13$ENG<- ifelse(fyc13$OTHLANG==2, 0, fyc13$ENG) 
+fyc13$ENG<- ifelse(fyc13$OTHLANG %in% c(-8,-9,-7,-15), -15, fyc13$ENG) 
+
 fyc13$ENG<- ifelse(fyc13$ENG==-1 & fyc13$BORNUSA==1, 0, fyc13$ENG) 
 fyc13$ENG<- ifelse(fyc13$ENG==-1 & fyc13$USBORN42==1, 0, fyc13$ENG)
+
+fyc13$ENG<- ifelse(fyc13$ENG==-1 & fyc13$USBORN42==1, 0, fyc13$ENG)
+
+  # add labels 
+        fyc13$ENG = labelled((fyc13$ENG), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "Under 5 years old" = 5,
+                                         "N/A" = -15) ,
+                              label = "Not Comfortable speaking english"
+                              )
+
+
+
+
 
 fyc13 <-fyc13  %>%  select(-HWELLSPE, -ENGSPK42, -OTHLANG, -LANGHM42)
 
@@ -468,15 +680,41 @@ for year 2011 & 2012
 
 
 fyc12$ENG<- replace(fyc12$ENG, fyc12$ENG==2, 0)
+fyc12$ENG<- replace(fyc12$ENG, fyc12$ENG %in% c(-8,-9,-7,-15), -15)
+
 
 fyc12$ENG<- ifelse(fyc12$ENG==-1 & fyc12$LANGHM42== 1, 0, fyc12$ENG) 
 fyc12$ENG<- ifelse(fyc12$ENG==-1 & fyc12$BORNUSA==1, 0, fyc12$ENG) 
+
+  # add labels 
+        fyc12$ENG = labelled((fyc12$ENG), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Not Comfortable speaking english"
+                              )
+
+
 fyc12 <-fyc12  %>%  select(-LANGHM42)
 
 
 fyc11$ENG<- replace(fyc11$ENG, fyc11$ENG==2, 0)
+fyc11$ENG<- replace(fyc11$ENG, fyc11$ENG %in% c(-8,-9,-7,-15), -15)
+
 fyc11$ENG<- ifelse(fyc11$ENG==-1 & fyc11$LANGHM42== 1, 0, fyc11$ENG) 
 fyc11$ENG<- ifelse(fyc11$ENG==-1 & fyc11$BORNUSA==1, 0, fyc11$ENG) 
+
+  # add labels 
+        fyc11$ENG = labelled((fyc11$ENG), 
+                              labels = c(NO = 0, 
+                                         YES = 1 , 
+                                         INAPPLICABLE = -1,
+                                         "N/A" = -15) ,
+                              label = "Not Comfortable speaking english"
+                              )
+
+
 
 fyc11 <-fyc11  %>%  select(-LANGHM42)
 
@@ -500,9 +738,42 @@ due to previous year change in US born some changes need to be done with this da
         fyc13$YRSINUS<-ifelse(fyc13$PANEL==18,fyc13$YRSINUS,fyc13$LIVEUS42)
 
     table(fyc13$PANEL,fyc13$BORNUSA)
+    
     fyc13 = subset(fyc13, select = -c(USBORN42,LIVEUS42))
 
 
+
+```
+for all years
+
+```{r}
+
+fyc_names<- paste0("fyc", 11:19)
+fycsets <- mget(fyc_names)
+  
+for (i in seq_along(fycsets)) {
+ data <-fycsets[[i]]
+ data <- data %>% 
+    mutate (
+        BORNUSA = replace(BORNUSA,BORNUSA %in% c(-7,-8,-9,-15), -15 ), # Missing
+        BORNUSA = replace(BORNUSA,BORNUSA %in% c(1,-1), 0 ), # No, US Born 
+        BORNUSA = replace(BORNUSA,BORNUSA %in% c(2), 1), # Yes, Foreign Born
+        BORNUSA = labelled(
+            BORNUSA, 
+            labels = c(
+                      "US-Born" = 0, 
+                      "Foregin-Born" = 1 , 
+                      INAPPLICABLE = -1,
+                      "N/A" = -15
+                    ) ,
+            label = "Nativity Status"
+            )
+        )%>%
+            rename(FORGNBORN = BORNUSA)
+
+  assign(fyc_names[i], data)
+
+}
 
 ```
 
@@ -531,20 +802,93 @@ for year 2011
             fyc11$YRSINUS<-replace(fyc11$YRSINUS,fyc11$YRSINUS==0,1)  #  1 LESS THAN 1 YEAR
 
 ```
-### SF-12vtv 
 
-## Physical health component
 
 ```{r}
+
+fyc_names<- paste0("fyc", 11:19)
+fycsets <- mget(fyc_names)
+  
+for (i in seq_along(fycsets)) {
+ data <-fycsets[[i]]
+ data <- data %>% 
+    mutate (
+        YRSINUS = ifelse(YRSINUS ==-1, 0, YRSINUS), # 0 US-born 
+        YRSINUS = replace(YRSINUS,YRSINUS %in% c(-7,-8,-9,-15), -15 ), # Missing
+        YRSINUS = replace(YRSINUS,YRSINUS %in% c(1,2), 1 ), # Less than 5 Years
+        YRSINUS = replace(YRSINUS,YRSINUS %in% c(3,4), 2 ), # Between 5-15 years
+        YRSINUS = replace(YRSINUS,YRSINUS %in% c(5), 3 ), # More than 15 years
+        YRSINUS = labelled(
+            YRSINUS, 
+            labels = c(
+                      "US_Born" = 0,
+                      "<5 years" = 1, 
+                      "5-14 years" = 2 ,
+                      "15+ years" = 3 ,
+                      "N/A" = -15
+                    ) ,
+            label = "Years in US"
+            )
+        )
+
+  assign(fyc_names[i], data)
+
+}
 
 ```
 
 
-## Mental health component
+
+### Avoidable Hospitalization 
 
 ```{r}
 
+source(paste0(wd$codes, "avoid_hosptl.R"))
+
+
+yearset <- 2011:2019
+condsets <- vector("list", length(yearset))
+fyc_names <- paste0("fyc", 11:19)  # Creates "fyc11", "fyc12", ..., "fyc15"
+fycsets <- mget(fyc_names)
+# Define ICD codes
+icd10_codes <- list(
+    hypertension = "I10",
+    copd = c("J44", "J45"),
+    diabetes = "E11",
+    chf = "I50",
+    pneumonia = "J18",
+    uti = "N39"
+)
+icd9_codes <- list(
+    diabetes = "250",
+    hypertension = c("401", "402", "403"),
+    copd = c("491", "490", "496", "466", "492", "494"),
+    chf = c("428", "398"),
+    pneumonia = c("480", "481", "482", "483", "486"),
+    uti = "599"
+)
+
+
+# Loop through years and process
+
+for (i in seq_along(yearset)) {
+    condsets[[i]] <- read_MEPS(year = yearset[i], type = "COND")
+
+    if (yearset[i] < 2016) {
+        fycsets[[i]] <- process_condsets(condsets[[i]], fycsets[[i]], "ICD9CODX", icd9_codes)
+    } else {
+        fycsets[[i]] <- process_condsets(condsets[[i]], fycsets[[i]], "ICD10CDX", icd10_codes)
+    }
+      assign(fyc_names[i], fycsets[[i]])
+
+           
+}
+
+
+
 ```
+
+
 
 
 
@@ -555,15 +899,45 @@ for year 2011, merge ethnicity into the race
 
 ```{r}
 
-fyc11$RACETHX<-fyc11$RACETHX+1
-fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX %in% c(4, 6, 7),6)  # 3 5 YRS., LESS THAN 10 YRS.
-fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX==5,4)  # 3 5 YRS., LESS THAN 10 YRS.
-fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX==6,5)  # 3 5 YRS., LESS THAN 10 YRS.
-
-fyc11$RACETHX<-ifelse(fyc11$HISPANX==1,1,fyc11$RACETHX)
+fyc11$RACETHX<-fyc2011$RACETHX
+fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX %in% c(6,3,5) ,5)  # Other Race
+fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX==2,3)  # Black only
+fyc11$RACETHX<-replace(fyc11$RACETHX,fyc11$RACETHX %in% c(1), 2 ) # White 
+fyc11$RACETHX<-ifelse(fyc11$HISPANX==1,1,fyc11$RACETHX) # Hispanic 
 
 
 ```
+
+ fix the labels for race 
+
+```{r}
+
+fyc_names<- paste0("fyc", 11:19)
+fycsets <- mget(fyc_names)
+  
+for (i in seq_along(fycsets)) {
+ data <-fycsets[[i]]
+ data <- data %>% 
+    mutate (
+        RACETHX = labelled(
+            RACETHX, 
+            labels = c(         
+              "Hispanic" = 1,
+              "Non-Hispanic White Only" = 2,
+              "Non-Hispanic Black Only" = 3,
+              "Non-Hispanic Asian Only" = 4,
+              "Other Races" = 5
+                    ) ,
+            label = "Race & Ethnicity"
+            )
+        )
+  assign(fyc_names[i], data)
+
+}
+
+```
+
+
 
 
 ### impute ADRISK42 and ADOVER42, ADSMOK42 brininging info from 2019 and 2017 
@@ -574,8 +948,6 @@ for (var in c("ADRISK42", "ADOVER42", "ADSMOK42")) {
   
     fyc18[[var]] <- NA
 
- 
-    
 matching_indices<- match(fyc18$DUPERSID, fyc19$DUPERSID)
 replacement <- fyc19[[var]][matching_indices[!is.na(matching_indices)]]
 fyc18[[var]] <- replace(fyc18[[var]], !is.na(matching_indices)&fyc18$PANEL==23, replacement)
@@ -593,6 +965,9 @@ matching_indices <- match(fyc18$DUPERSID, paste0(as.character(fyc2017$PANEL), fy
 ```
 
 
+
+
+
 ## 5. Merge 2011 to 2019 in one data set
 
 ```{r}
@@ -602,57 +977,29 @@ matching_indices <- match(fyc18$DUPERSID, paste0(as.character(fyc2017$PANEL), fy
 allyear = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc17,fyc18,fyc19) %>%
   mutate(poolwt = PERWT / 9)
 
-partyear = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc18) %>%
-  mutate(poolwt = PERWT / 7)
+#partyear = bind_rows(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc18) %>%
+  # (poolwt = PERWT / 7)
 
 data <- allyear
-
-# data <- allyear
-
-# bindraw<-bind_rows(fyc2011,fyc2012,fyc2013,fyc2014,fyc2015,fyc2016,fyc2017,fyc2018,fyc2019) %>%
-# mutate(poolwt = PERWT / 9)
-  
-#data<-Binded
-
-## drop extra variables"
-
-data<- subset(data, select = -c(CABREAST,CACOLON))
-
-
-rm(fyc2011,fyc2012,fyc2013,fyc2014,fyc2015,fyc2016,fyc2017,fyc2018,fyc2019,fyc2020)
-rm(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc17,fyc18,fyc19)
-
-
 
 ```
 
 
 ## 6. Further cleaning
 
-### Years in US
-people who were borned in US weren't asked this question thus their value was -1 should change that to 0
-```{r}
-table(data$YRSINUS)
-table(data$BORNUSA)
-table(data$ENG)
-
-
-data$YRSINUS<-ifelse(data$YRSINUS==-1 & data$BORNUSA==1, 0, data$YRSINUS) # 0 US-born 
-data$YRSINUS <- replace(data$YRSINUS, data$YRSINUS %in% c(1,2),1) # less than 5 years
-data$YRSINUS <- replace(data$YRSINUS, data$YRSINUS %in% c(3,4),2) # between 5-15 years in US
-data$YRSINUS <- replace(data$YRSINUS, data$YRSINUS ==5 ,3) # more than 15 years
-
-```
-
 ### Female
 
 ```{r}
 
-data$FEMALE <- ifelse(data$SEX==2,1,0)
+data <- data %>%
+  rename(female = SEX) %>%
+  mutate(
+   female = replace(female,female==1,0),
+   female = replace(female,female==2,1) ,
+    female = labelled(female, label = "Female")
+)
 
-table(data$FEMALE)
-
-table(data$SEX)
+table(data$female)
 
 ```
 
@@ -660,16 +1007,19 @@ table(data$SEX)
 ```{r}
 
 data$MARRYX <- replace(data$MARRYX,data$MARRYX %in% c(2,3,4,5),0)
+data$MARRYX <- replace(data$MARRYX,data$MARRYX %in% c(-7,-8,-9),-15)
+data$MARRYX <- labelled(data$MARRYX, label= "Married")
 
 ```
 
 ### Employed
 
 ```{r}
-data$EMPST31 <- replace(data$EMPST31, data$EMPST31 %in% c(2,3),1) # Employed
-data$EMPST31 <- replace(data$EMPST31, data$EMPST31==4,0) #unemployed
-data$EMPST31<- ordered(data$EMPST31, labels = c("unemployed", "employed"))
+data$EMPST31 <- replace(data$EMPST31, data$EMPST31 %in% c(2,3,1),1) # Employed
+data$EMPST31 <- replace(data$EMPST31, data$EMPST31 %in% c(-1,4),0) #unemployed
+data$EMPST31 <- replace(data$EMPST31,data$EMPST31 %in% c(-7,-8,-9),-15)
 
+data$EMPST31 <- labelled(data$EMPST31, label= "Employed")
 
 ```
 
@@ -679,7 +1029,16 @@ data$EMPST31<- ordered(data$EMPST31, labels = c("unemployed", "employed"))
 
 data$RTHLTH42 <- replace(data$RTHLTH42, data$RTHLTH42 %in% c(1,2,3),1) # Agree
 data$RTHLTH42 <- replace(data$RTHLTH42, data$RTHLTH42 %in% c(4,5),0) # Disagree
+data$RTHLTH42 <- replace(data$RTHLTH42, data$RTHLTH42 %in% c(-7,-8,-9,-15),-15) # Disagree
 
+data$RTHLTH42 <- labelled(data$RTHLTH42, label = "Self Reported Good Health")
+
+```
+
+# Have US Provider
+
+```{r}
+data$HAVEUS42 <- replace(data$HAVEUS42, data$HAVEUS42 %in% c(-1),2) # Agree
 
 ```
 
@@ -691,8 +1050,9 @@ make it a dummy variable if person somewhat or strongly agrees that they are MOR
 
 data$ADRISK42 <- replace(data$ADRISK42, data$ADRISK42 %in% c(1,2,3),0) # Disagree
 data$ADRISK42 <- replace(data$ADRISK42, data$ADRISK42 %in% c(4,5),1) # Agree
+data$ADRISK42 <- replace(data$ADRISK42, data$ADRISK42 %in% c(-7,-8,-9,-15),-15) # Disagree
 
-
+data$ADRISK42 <- labelled(data$ADRISK42, label = "Likely to Take Risk")
 ```
 
 ### overcome illnes on their own
@@ -700,7 +1060,21 @@ data$ADRISK42 <- replace(data$ADRISK42, data$ADRISK42 %in% c(4,5),1) # Agree
 
 data$ADOVER42 <- replace(data$ADOVER42, data$ADOVER42 %in% c(1,2,3),0) # Disagree 
 data$ADOVER42 <- replace(data$ADOVER42, data$ADOVER42 %in% c(4,5),1) # Agree
+data$ADOVER42 <- replace(data$ADOVER42, data$ADOVER42 %in% c(-7,-8,-9,-15),-15) # Disagree
 
+data$ADOVER42 <- labelled(data$ADOVER42, label = "Belief in Overcoming Illness Alone")
+
+```
+
+## HRQOL SVS12
+
+
+```{r}
+#mental components
+
+data$MCS42 <- replace(data$MCS42, data$MCS42 %in% c(-7,-8,-9,-15), -15)
+
+data$PCS42 <- replace(data$PCS42, data$PCS42 %in% c(-7,-8,-9,-15), -15)
 
 ```
 
@@ -710,7 +1084,7 @@ data$ADOVER42 <- replace(data$ADOVER42, data$ADOVER42 %in% c(4,5),1) # Agree
 
 ### fake state variable:
 
-```{r}
+```{r }
 
 # Load necessary library
 set.seed(123)  # Setting seed for reproducibility
@@ -776,7 +1150,7 @@ table(data$treat)
 ## 8. Import other variables
 
 ### State unemployment rate 
-```{r}
+```{r,eval=TRUE}
 
 UNEMPR <- read_excel(paste0(wd$data,"UnempR.xlsx"), sheet = "Sheet1")
 sapply(UNEMPR, class)
@@ -814,7 +1188,7 @@ table(data$state)
 
 ### State structural xenphobia
 
-```{r}
+```{r,eval=TRUE}
 
 
 IPC <- read.csv(paste0(wd$data,"IPC.csv"), header = TRUE, sep ="," , fill = TRUE)
@@ -841,12 +1215,33 @@ data$IPC<-ifelse(data$StateN == "North Carolina" & data$YEAR==2016 & is.na(data$
 
 ```{r}
 
-dataset<-data
-dataset[dataset == -15 | dataset == -9 | dataset == -8 | dataset==-7] <- NA
-dataset<- na.omit(dataset)
+data[data == -15 | data == -9 | data== -8 | data==-7] <- -15
+
+data[data == -15] <- NA
+
 
 ```
 
+## drop extra variables"
+
+
+```{r}
+
+data <- data %>%
+  select(-CABREAST , -CACOLON )
+
+rm(fyc2011,fyc2012,fyc2013,fyc2014,fyc2015,fyc2016,fyc2017,fyc2018,fyc2019,fyc2020)
+rm(fyc11,fyc12,fyc13,fyc14,fyc15,fyc16,fyc17,fyc18,fyc19)
+
+```
+
+## subset to older than 25
+
+
+```{r}
+data<- data %>% filter(AGE >25)
+
+```
 
 
 
@@ -874,10 +1269,10 @@ dataset<- na.omit(dataset)
 #MEPS<- data
 
 
-library(haven)
+#library(haven)
 
 # Example: Save as Stata file
-write_dta(dataset, paste0(wd$data,"RAWMEPS.dta"))
+#write_dta(data, paste0(wd$data,"MEPSFAKE.dta"))
 
 
 ```

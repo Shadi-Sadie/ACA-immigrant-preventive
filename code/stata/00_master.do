@@ -15,6 +15,11 @@ cls
 * Setting path and directories
 **********************************
 
+*packages required
+
+ssc install reghdfe
+ssc install ftools
+
 
 * path to all necessary packages
 
